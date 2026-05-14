@@ -22,7 +22,7 @@ All 8 games are grounded in validated neuropsychological paradigms:
 | 🧩 **Pattern Recall** | Working Memory | Corsi block-tapping |
 | 🔁 **Dual N-Back** | Working Memory | N-Back (Kirchner 1958; Jaeggi 2008) |
 | 🔀 **Rule Shift** | Cognitive Flexibility | Wisconsin Card Sorting Test (Berg, 1948) |
-| 🗼 **Mind Bridge** | Planning | Tower of Hanoi / London (Shallice, 1982) |
+| 🛥️ **Reef Crossing** | Planning | River-crossing paradigm |
 | 🎯 **Focus Grid** | Selective Attention | Visual search paradigm |
 | 🔢 **Number Flow** | Fluid Reasoning | Sequence completion / mental arithmetic |
 | 🔤 **Word Maze** | Verbal Fluency | Semantic chain construction |
@@ -32,7 +32,7 @@ All 8 games are grounded in validated neuropsychological paradigms:
 The previous "Decision Lab" and "Priority Matrix" tested business judgment — useful, but those are crystallized knowledge tasks, not exercises for the cortical machinery that *underlies* good judgment. The replacements target the actual prefrontal mechanics:
 
 - **Stroop Showdown** — Words like "RED" are printed in conflicting ink colors. You must respond to the *ink color*, not the word. This forces the prefrontal cortex to suppress the automatic reading response — the canonical test of inhibitory control.
-- **Mind Bridge** — A Tower of Hanoi puzzle. Move stacked discs to a goal configuration in the fewest moves, never placing a larger disc on a smaller one. Requires forward mental simulation and goal-directed planning.
+- **Reef Crossing** — A river-crossing puzzle: ferry sea creatures across a deep trench in a shuttle that holds only 2 (you + 1 passenger). Some pairs of creatures can't be left alone together — sharks eat fish, fish eat plankton. Solving it requires thinking 3+ moves ahead, holding multiple constraints in working memory, suppressing the obvious-but-wrong move, and the willingness to bring a creature *back* temporarily to make progress. Classic planning/EF puzzle dating to the 9th century.
 - **Rule Shift** — A Wisconsin Card Sorting paradigm. You sort cards by an unannounced hidden rule (color, shape, or count) using only correct/wrong feedback. Periodically the rule silently changes — you must detect it and adapt. The gold-standard cognitive flexibility task.
 
 ## What's New (v2.0)

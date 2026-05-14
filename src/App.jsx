@@ -692,7 +692,7 @@ const SwimmingCreature = ({ creature, top, side = "left", duration = 30, delay =
 // ═══════════════════════════════════════════════════════════
 // Games are grounded in validated executive function paradigms:
 //  - Stroop Showdown: response inhibition (Stroop, 1935)
-//  - Mind Bridge: planning (Tower of London / Hanoi, Shallice 1982)
+//  - Reef Crossing: planning + working memory (river-crossing paradigm)
 //  - Rule Shift: cognitive flexibility / set-shifting (WCST, Berg 1948)
 //  - Dual N-Back: working memory updating (Kirchner 1958; Jaeggi 2008)
 //  - Pattern Recall: visuospatial working memory (Corsi block-tapping)
@@ -705,7 +705,7 @@ const GAMES = [
   { id: "focus", name: "Focus Grid", icon: "🎯", color: "#a08fc7", skill: "Attention", desc: "Find targets in a visual field", difficulty: "Easy" },
   { id: "stroop", name: "Stroop Showdown", icon: "🎨", color: C.seagrass, skill: "Inhibition", desc: "Override the automatic response — tap the ink color, not the word", difficulty: "Hard" },
   { id: "wordmaze", name: "Word Maze", icon: "🔤", color: C.coral, skill: "Verbal Fluency", desc: "Build word chains from connections", difficulty: "Medium" },
-  { id: "bridge", name: "Mind Bridge", icon: "🗼", color: "#e4925a", skill: "Planning", desc: "Move discs to the goal in minimum steps", difficulty: "Hard" },
+  { id: "bridge", name: "Reef Crossing", icon: "🛥️", color: "#e4925a", skill: "Planning", desc: "Ferry creatures across the trench — plan ahead so nothing gets eaten", difficulty: "Hard" },
   { id: "dualn", name: "Dual N-Back", icon: "🔁", color: C.shallow, skill: "Working Memory", desc: "Track two streams simultaneously", difficulty: "Hard" },
   { id: "ruleshift", name: "Rule Shift", icon: "🔀", color: "#e8c75c", skill: "Flexibility", desc: "Discover the hidden rule — then adapt when it changes", difficulty: "Hard" },
 ];
@@ -1224,149 +1224,349 @@ const WordMazeGame = ({ onComplete }) => {
 };
 
 // ───────────────────────────────────────────────────────────
-// MIND BRIDGE — Tower of Hanoi paradigm (Shallice 1982).
-// Goal-directed planning. Move discs between three pegs
-// (largest on bottom rule) to match the goal in min moves.
+// REEF CROSSING — river-crossing planning paradigm.
+// Ferry sea creatures across a deep trench in a shuttle that
+// holds only 2 at a time (you + 1 creature). Some creatures
+// will eat others if left alone together without you watching.
+//
+// This is the classic "Missionaries and Cannibals" / "Fox,
+// Goose, Grain" planning puzzle. It exercises:
+//   - Planning: think 3+ moves ahead
+//   - Working memory: track current state + rules
+//   - Inhibition: suppress the obvious-but-wrong move
+//   - Flexibility: backtrack when stuck (you sometimes have
+//     to bring a creature BACK to make progress)
 // ───────────────────────────────────────────────────────────
-const MindBridgeGame = ({ onComplete }) => {
-  // Three increasingly hard puzzles (3, 3, 4 discs)
+const ReefCrossingGame = ({ onComplete }) => {
+  // Each puzzle: creatures with their visuals, and predator->prey rules.
+  // "eats" = if both are on a bank without YOU, the first eats the second.
   const PUZZLES = [
-    { discs: 3, start: [[3, 2, 1], [], []], goal: [[], [], [3, 2, 1]], minMoves: 7 },
-    { discs: 3, start: [[3, 2, 1], [], []], goal: [[], [3, 2, 1], []], minMoves: 7 },
-    { discs: 4, start: [[4, 3, 2, 1], [], []], goal: [[], [], [4, 3, 2, 1]], minMoves: 15 },
+    {
+      name: "The Trench",
+      creatures: [
+        { id: "shark", label: "Shark", component: Hammerhead, scale: 0.55 },
+        { id: "fish",  label: "Fish",  component: Clownfish,  scale: 0.65 },
+        { id: "kelp",  label: "Kelp",  emoji: "🌿" },
+      ],
+      // Predator -> prey constraints
+      eats: [["shark", "fish"], ["fish", "kelp"]],
+      optimal: 7,
+      hint: "Classic puzzle — only the fish can't be left alone with either neighbor.",
+    },
+    {
+      name: "The Drift",
+      creatures: [
+        { id: "orca",     label: "Orca",     component: OrcaWhale, scale: 0.5 },
+        { id: "seal",     label: "Seal",     component: SeaTurtle, scale: 0.55 }, // proxy visual
+        { id: "squid",    label: "Squid",    component: GiantSquid, scale: 0.5 },
+        { id: "fish",     label: "Fish",     component: Clownfish, scale: 0.6 },
+      ],
+      eats: [["orca", "seal"], ["seal", "squid"], ["squid", "fish"]],
+      optimal: 9,
+      hint: "A longer chain — three predator-prey pairs.",
+    },
   ];
-  const DISC_COLORS = [C.aqua, C.gold, C.coral, "#a08fc7", "#e4925a"];
+
   const [puzzleIdx, setPuzzleIdx] = useState(0);
-  const [pegs, setPegs] = useState(JSON.parse(JSON.stringify(PUZZLES[0].start)));
-  const [selectedPeg, setSelectedPeg] = useState(null);
+  const puzzle = PUZZLES[puzzleIdx];
+  const [leftBank, setLeftBank] = useState(puzzle.creatures.map(c => c.id));
+  const [rightBank, setRightBank] = useState([]);
+  const [shuttle, setShuttle] = useState([]); // up to 1 passenger (+ you)
+  const [shuttleSide, setShuttleSide] = useState("left");
   const [moves, setMoves] = useState(0);
   const [score, setScore] = useState(0);
-  const [phase, setPhase] = useState("playing"); // 'playing' | 'solved'
+  const [phase, setPhase] = useState("playing"); // 'playing' | 'eaten' | 'solved'
+  const [eatenMsg, setEatenMsg] = useState("");
+  const [hintOpen, setHintOpen] = useState(false);
 
+  // Reset state when puzzle changes
   useEffect(() => {
-    setPegs(JSON.parse(JSON.stringify(PUZZLES[puzzleIdx].start)));
-    setSelectedPeg(null); setMoves(0); setPhase("playing");
+    setLeftBank(puzzle.creatures.map(c => c.id));
+    setRightBank([]);
+    setShuttle([]);
+    setShuttleSide("left");
+    setMoves(0); setPhase("playing"); setEatenMsg("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [puzzleIdx]);
 
-  const isSolved = useCallback((p) => {
-    const g = PUZZLES[puzzleIdx].goal;
-    return p.every((peg, i) => peg.length === g[i].length && peg.every((d, j) => d === g[i][j]));
-  }, [puzzleIdx]);
+  const getCreature = (id) => puzzle.creatures.find(c => c.id === id);
+  const renderCreatureIcon = (id, size = 56) => {
+    const c = getCreature(id);
+    if (!c) return null;
+    if (c.emoji) return <span style={{ fontSize: size * 0.75 }}>{c.emoji}</span>;
+    const Comp = c.component;
+    return <Comp size={size} />;
+  };
 
-  const tapPeg = (i) => {
-    if (phase !== "playing") return;
-    if (selectedPeg === null) {
-      if (pegs[i].length > 0) setSelectedPeg(i);
-    } else if (selectedPeg === i) {
-      setSelectedPeg(null);
-    } else {
-      const fromTop = pegs[selectedPeg][pegs[selectedPeg].length - 1];
-      const toTop = pegs[i][pegs[i].length - 1];
-      if (toTop === undefined || fromTop < toTop) {
-        // Valid move
-        const np = pegs.map(p => [...p]);
-        const d = np[selectedPeg].pop();
-        np[i].push(d);
-        setPegs(np); setSelectedPeg(null);
-        const nm = moves + 1; setMoves(nm);
-        if (isSolved(np)) {
-          const min = PUZZLES[puzzleIdx].minMoves;
-          // Score: full points if optimal, scaled down for extra moves
-          const efficiency = Math.max(0.3, min / nm);
-          const pts = Math.round((50 + min * 8) * efficiency);
-          setScore(s => s + pts); setPhase("solved");
-          setTimeout(() => {
-            if (puzzleIdx + 1 >= PUZZLES.length) onComplete(score + pts);
-            else setPuzzleIdx(p => p + 1);
-          }, 1800);
-        }
-      } else {
-        // Invalid (larger on smaller) — flash
-        setSelectedPeg(null);
+  // Check whether a bank (without you) has any predator+prey pair
+  const checkSafety = (bank) => {
+    for (const [pred, prey] of puzzle.eats) {
+      if (bank.includes(pred) && bank.includes(prey)) {
+        return { safe: false, pred, prey };
       }
     }
+    return { safe: true };
   };
 
-  const puzzle = PUZZLES[puzzleIdx];
-  const renderPeg = (peg, i) => {
-    const isSelected = selectedPeg === i;
-    return (
-      <div key={i} onClick={() => tapPeg(i)} style={{
-        flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end",
-        cursor: phase === "playing" ? "pointer" : "default",
-        height: 200, position: "relative", padding: "0 4px",
-      }}>
-        {/* Peg pole */}
-        <div style={{
-          position: "absolute", bottom: 12, width: 6, height: 160,
-          background: isSelected ? C.gold : "rgba(255,255,255,0.25)",
-          borderRadius: 3, transition: "background 0.2s",
-        }} />
-        {/* Base */}
-        <div style={{
-          position: "absolute", bottom: 4, width: "85%", height: 10,
-          background: isSelected ? C.gold : "rgba(255,255,255,0.35)",
-          borderRadius: 5, transition: "background 0.2s",
-        }} />
-        {/* Discs */}
-        <div style={{ display: "flex", flexDirection: "column-reverse", alignItems: "center", paddingBottom: 12, position: "relative", zIndex: 2 }}>
-          {peg.map((d, j) => {
-            const isTopMost = j === peg.length - 1;
-            return (
-              <div key={j} style={{
-                width: 28 + d * 18, height: 22,
-                background: DISC_COLORS[d - 1],
-                borderRadius: 6, marginTop: 2,
-                border: isSelected && isTopMost ? "2px solid #fff" : "2px solid rgba(0,0,0,0.2)",
-                boxShadow: isSelected && isTopMost ? `0 0 14px ${DISC_COLORS[d - 1]}` : "0 2px 4px rgba(0,0,0,0.2)",
-                transition: "all 0.2s",
-              }} />
-            );
-          })}
-        </div>
-      </div>
-    );
+  // Player taps a creature on the active bank — load into shuttle
+  const tapCreatureOnBank = (id, side) => {
+    if (phase !== "playing") return;
+    if (side !== shuttleSide) return; // shuttle isn't here
+    if (shuttle.length >= 1) return;   // shuttle full
+    if (side === "left") setLeftBank(b => b.filter(x => x !== id));
+    else setRightBank(b => b.filter(x => x !== id));
+    setShuttle([id]);
   };
-  const renderGoal = () => (
-    <div style={{ display: "flex", gap: 8, padding: 8, background: "rgba(255,255,255,0.04)", borderRadius: 10, marginBottom: 12 }}>
-      <div style={{ ...font(11, 700), color: "rgba(255,255,255,0.55)", letterSpacing: 1, textTransform: "uppercase", padding: "4px 0", writingMode: "vertical-rl", textOrientation: "mixed" }}>GOAL</div>
-      {puzzle.goal.map((peg, i) => (
-        <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column-reverse", alignItems: "center", padding: 6, height: 70, justifyContent: "flex-start" }}>
-          {peg.map((d, j) => (
-            <div key={j} style={{ width: 14 + d * 8, height: 8, background: DISC_COLORS[d - 1], borderRadius: 3, marginTop: 1, opacity: 0.85 }} />
-          ))}
-          {peg.length === 0 && <div style={{ width: 2, height: 50, background: "rgba(255,255,255,0.15)" }} />}
-        </div>
-      ))}
-    </div>
-  );
+
+  // Player taps the passenger in the shuttle — unload to current bank
+  const unloadShuttle = (id) => {
+    if (phase !== "playing") return;
+    setShuttle(s => s.filter(x => x !== id));
+    if (shuttleSide === "left") setLeftBank(b => [...b, id]);
+    else setRightBank(b => [...b, id]);
+  };
+
+  // Cross the trench
+  const cross = () => {
+    if (phase !== "playing") return;
+    const newSide = shuttleSide === "left" ? "right" : "left";
+    setShuttleSide(newSide);
+    setMoves(m => m + 1);
+
+    // After crossing, the bank YOU JUST LEFT is unsupervised.
+    // The shuttle still has its passengers; the "left behind" bank
+    // is the one you're leaving (i.e. the previous shuttleSide).
+    const leftBehind = shuttleSide === "left" ? leftBank : rightBank;
+    const safety = checkSafety(leftBehind);
+    if (!safety.safe) {
+      const predName = getCreature(safety.pred).label;
+      const preyName = getCreature(safety.prey).label;
+      setEatenMsg(`The ${predName} ate the ${preyName}!`);
+      setPhase("eaten");
+    }
+    // Win detection runs in the useEffect below.
+  };
+
+  // Win detection (clean recompute): every time state changes, check
+  useEffect(() => {
+    if (phase !== "playing") return;
+    if (
+      shuttleSide === "right" &&
+      shuttle.length === 0 &&
+      leftBank.length === 0 &&
+      rightBank.length === puzzle.creatures.length
+    ) {
+      triggerWin(moves);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [leftBank, rightBank, shuttle, shuttleSide]);
+
+  const triggerWin = (movesUsed) => {
+    const eff = Math.max(0.35, puzzle.optimal / Math.max(movesUsed, puzzle.optimal));
+    const pts = Math.round((60 + puzzle.optimal * 10) * eff);
+    setScore(s => s + pts);
+    setPhase("solved");
+    setTimeout(() => {
+      if (puzzleIdx + 1 >= PUZZLES.length) onComplete(score + pts);
+      else setPuzzleIdx(p => p + 1);
+    }, 1900);
+  };
+
+  const reset = () => {
+    if (phase === "solved") return;
+    setLeftBank(puzzle.creatures.map(c => c.id));
+    setRightBank([]); setShuttle([]); setShuttleSide("left");
+    setMoves(0); setPhase("playing"); setEatenMsg("");
+  };
+
+  const subtitle = phase === "eaten" ? eatenMsg
+    : phase === "solved" ? `Solved in ${moves} moves!`
+    : `Get them all across — shuttle holds 1 + you`;
 
   return (
-    <GameChrome name="Mind Bridge" icon="🗼" color="#e4925a" round={puzzleIdx + 1} totalRounds={PUZZLES.length} score={score} timeLeft={0} maxTime={0}
-      subtitle={phase === "solved" ? "Solved!" : `Plan ahead — ${puzzle.minMoves} moves is optimal`}>
-      {renderGoal()}
-      <div style={{
-        display: "flex", justifyContent: "space-around", alignItems: "flex-end",
-        background: "rgba(255,255,255,0.04)", borderRadius: 16, padding: "8px 4px 4px",
-        border: `1px solid rgba(255,255,255,0.08)`,
-      }}>
-        {pegs.map(renderPeg)}
-      </div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 14, padding: "0 4px" }}>
-        <div style={{ ...font(13, 600), color: "rgba(255,255,255,0.65)" }}>
-          Moves: <span style={{ ...mono(15), color: moves <= puzzle.minMoves ? C.success : moves <= puzzle.minMoves + 2 ? C.gold : C.coral }}>{moves}</span>
-          <span style={{ ...font(12), color: "rgba(255,255,255,0.4)" }}> / {puzzle.minMoves} optimal</span>
+    <GameChrome name="Reef Crossing" icon="🛥️" color="#e4925a"
+      round={puzzleIdx + 1} totalRounds={PUZZLES.length}
+      score={score} timeLeft={0} maxTime={0} subtitle={subtitle}>
+
+      {/* Optimal target + reset */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, padding: "0 2px" }}>
+        <div style={{ ...font(12, 600), color: "rgba(255,255,255,0.65)" }}>
+          Moves: <span style={{ ...mono(14), color: moves <= puzzle.optimal ? C.success : moves <= puzzle.optimal + 2 ? C.gold : C.coral }}>{moves}</span>
+          <span style={{ ...font(11), color: "rgba(255,255,255,0.35)" }}> · optimal {puzzle.optimal}</span>
         </div>
-        <div onClick={() => {
-            if (phase !== "playing") return;
-            setPegs(JSON.parse(JSON.stringify(puzzle.start)));
-            setMoves(0); setSelectedPeg(null);
-          }}
-          style={{ ...font(12, 600), color: C.aqua, padding: "4px 10px", background: `${C.aqua}1a`, borderRadius: 8, cursor: "pointer" }}>↺ Reset</div>
+        <div style={{ display: "flex", gap: 6 }}>
+          <div onClick={() => setHintOpen(o => !o)}
+            style={{ ...font(11, 600), color: C.aqua, padding: "4px 10px", background: `${C.aqua}1a`, borderRadius: 8, cursor: "pointer" }}>
+            {hintOpen ? "Hide rules" : "Show rules"}
+          </div>
+          <div onClick={reset}
+            style={{ ...font(11, 600), color: C.coral, padding: "4px 10px", background: `${C.coral}1a`, borderRadius: 8, cursor: "pointer" }}>↺ Reset</div>
+        </div>
       </div>
+
+      {hintOpen && (
+        <div style={{ padding: 10, background: "rgba(255,255,255,0.05)", borderRadius: 10, marginBottom: 10, ...font(12), color: "rgba(255,255,255,0.85)", lineHeight: 1.5 }}>
+          {puzzle.hint}<br/>
+          <span style={{ color: "rgba(255,255,255,0.6)" }}>If you leave a bank, these can't be alone together:</span>
+          <div style={{ marginTop: 4, display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {puzzle.eats.map(([p, q], i) => (
+              <span key={i} style={{ ...font(11, 600), color: C.coral, padding: "2px 8px", background: `${C.coral}1a`, borderRadius: 8 }}>
+                {getCreature(p).label} → {getCreature(q).label}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* The scene */}
+      <div style={{
+        position: "relative",
+        background: `linear-gradient(180deg, ${C.ocean}, ${C.midnight})`,
+        borderRadius: 16, padding: "16px 10px 10px", minHeight: 260,
+        border: "1px solid rgba(255,255,255,0.08)",
+      }}>
+        {/* Banks layout: LEFT bank — trench — RIGHT bank in a row */}
+        <div style={{ display: "flex", alignItems: "stretch", gap: 8 }}>
+          {/* LEFT bank */}
+          <div style={{
+            flex: 1, padding: 10, borderRadius: 12,
+            background: shuttleSide === "left" ? `${C.gold}1a` : "rgba(255,255,255,0.04)",
+            border: `1.5px dashed ${shuttleSide === "left" ? C.gold + "88" : "rgba(255,255,255,0.15)"}`,
+            minHeight: 200, display: "flex", flexDirection: "column",
+          }}>
+            <div style={{ ...font(10, 700), color: "rgba(255,255,255,0.6)", letterSpacing: 1, textTransform: "uppercase", marginBottom: 8, textAlign: "center" }}>
+              This Side
+            </div>
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6, alignItems: "center", justifyContent: "center" }}>
+              {leftBank.map(id => {
+                const c = getCreature(id);
+                return (
+                  <div key={id} onClick={() => tapCreatureOnBank(id, "left")} style={{
+                    display: "flex", alignItems: "center", gap: 6,
+                    padding: "4px 8px", background: "rgba(255,255,255,0.08)",
+                    borderRadius: 8, cursor: shuttleSide === "left" && shuttle.length === 0 && phase === "playing" ? "pointer" : "default",
+                    opacity: shuttleSide === "left" && shuttle.length === 0 && phase === "playing" ? 1 : 0.7,
+                    transition: "transform 0.15s, opacity 0.2s",
+                  }}
+                    onMouseDown={e => shuttleSide === "left" && shuttle.length === 0 && phase === "playing" && (e.currentTarget.style.transform = "scale(0.95)")}
+                    onMouseUp={e => (e.currentTarget.style.transform = "scale(1)")}
+                    onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+                  >
+                    {renderCreatureIcon(id, 36)}
+                    <span style={{ ...font(11, 600), color: "#fff" }}>{c.label}</span>
+                  </div>
+                );
+              })}
+              {leftBank.length === 0 && <div style={{ ...font(11), color: "rgba(255,255,255,0.3)", fontStyle: "italic" }}>empty</div>}
+            </div>
+          </div>
+
+          {/* TRENCH + shuttle */}
+          <div style={{
+            width: 90, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between", padding: "8px 0", position: "relative",
+          }}>
+            <div style={{ ...font(10, 700), color: "rgba(255,255,255,0.4)", letterSpacing: 1, textTransform: "uppercase" }}>Trench</div>
+            {/* Shuttle */}
+            <div style={{
+              width: 70, padding: "10px 6px", borderRadius: 12,
+              background: phase === "eaten" ? `${C.coral}33` : `${C.aqua}33`,
+              border: `2px solid ${phase === "eaten" ? C.coral : C.aqua}`,
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+              transform: `translateX(${shuttleSide === "right" ? "0" : "0"})`,
+              transition: "transform 0.4s",
+              boxShadow: `0 0 16px ${phase === "eaten" ? C.coral : C.aqua}66`,
+            }}>
+              <div style={{ ...font(11, 700), color: "#fff", marginBottom: 2 }}>🤿 You</div>
+              {shuttle.length > 0 ? (
+                <div onClick={() => unloadShuttle(shuttle[0])} style={{
+                  display: "flex", flexDirection: "column", alignItems: "center",
+                  cursor: phase === "playing" ? "pointer" : "default",
+                  padding: 4, background: "rgba(255,255,255,0.15)", borderRadius: 8,
+                }}>
+                  {renderCreatureIcon(shuttle[0], 36)}
+                  <span style={{ ...font(10, 600), color: "#fff" }}>{getCreature(shuttle[0]).label}</span>
+                </div>
+              ) : (
+                <div style={{ ...font(10), color: "rgba(255,255,255,0.5)", fontStyle: "italic", padding: "8px 0" }}>empty</div>
+              )}
+            </div>
+            <div style={{ ...font(9, 600), color: "rgba(255,255,255,0.55)", textTransform: "uppercase", letterSpacing: 1 }}>
+              {shuttleSide === "left" ? "← here" : "here →"}
+            </div>
+          </div>
+
+          {/* RIGHT bank */}
+          <div style={{
+            flex: 1, padding: 10, borderRadius: 12,
+            background: shuttleSide === "right" ? `${C.gold}1a` : "rgba(255,255,255,0.04)",
+            border: `1.5px dashed ${shuttleSide === "right" ? C.gold + "88" : "rgba(255,255,255,0.15)"}`,
+            minHeight: 200, display: "flex", flexDirection: "column",
+          }}>
+            <div style={{ ...font(10, 700), color: "rgba(255,255,255,0.6)", letterSpacing: 1, textTransform: "uppercase", marginBottom: 8, textAlign: "center" }}>
+              Goal Side
+            </div>
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6, alignItems: "center", justifyContent: "center" }}>
+              {rightBank.map(id => {
+                const c = getCreature(id);
+                return (
+                  <div key={id} onClick={() => tapCreatureOnBank(id, "right")} style={{
+                    display: "flex", alignItems: "center", gap: 6,
+                    padding: "4px 8px", background: "rgba(255,255,255,0.08)",
+                    borderRadius: 8, cursor: shuttleSide === "right" && shuttle.length === 0 && phase === "playing" ? "pointer" : "default",
+                    opacity: shuttleSide === "right" && shuttle.length === 0 && phase === "playing" ? 1 : 0.7,
+                    transition: "transform 0.15s, opacity 0.2s",
+                  }}
+                    onMouseDown={e => shuttleSide === "right" && shuttle.length === 0 && phase === "playing" && (e.currentTarget.style.transform = "scale(0.95)")}
+                    onMouseUp={e => (e.currentTarget.style.transform = "scale(1)")}
+                    onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+                  >
+                    {renderCreatureIcon(id, 36)}
+                    <span style={{ ...font(11, 600), color: "#fff" }}>{c.label}</span>
+                  </div>
+                );
+              })}
+              {rightBank.length === 0 && <div style={{ ...font(11), color: "rgba(255,255,255,0.3)", fontStyle: "italic" }}>empty</div>}
+            </div>
+          </div>
+        </div>
+
+        {/* Cross button */}
+        <div style={{ display: "flex", justifyContent: "center", marginTop: 12 }}>
+          <div onClick={cross} style={{
+            ...font(14, 700), color: phase === "playing" ? C.deepNavy : "rgba(255,255,255,0.5)",
+            padding: "10px 28px", borderRadius: 12,
+            background: phase === "playing" ? C.aqua : "rgba(255,255,255,0.1)",
+            cursor: phase === "playing" ? "pointer" : "default",
+            boxShadow: phase === "playing" ? `0 0 12px ${C.aqua}66` : "none",
+            transition: "all 0.2s",
+          }}
+            onMouseDown={e => phase === "playing" && (e.currentTarget.style.transform = "scale(0.96)")}
+            onMouseUp={e => (e.currentTarget.style.transform = "scale(1)")}
+            onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+          >
+            {shuttleSide === "left" ? "Cross → " : "← Cross"} {shuttle.length > 0 ? `(with ${getCreature(shuttle[0]).label})` : "(alone)"}
+          </div>
+        </div>
+      </div>
+
+      {/* Outcome banner */}
+      {phase === "eaten" && (
+        <div style={{ marginTop: 12, padding: 12, background: `${C.coral}1a`, borderRadius: 12, border: `1px solid ${C.coral}66`, textAlign: "center" }}>
+          <div style={{ ...font(14, 700), color: C.coral, marginBottom: 6 }}>✗ {eatenMsg}</div>
+          <div style={{ ...font(12, 500), color: "rgba(255,255,255,0.7)", marginBottom: 8 }}>Plan further ahead — sometimes you need to bring someone BACK.</div>
+          <div onClick={reset} style={{ display: "inline-block", ...font(13, 700), color: "#fff", padding: "6px 16px", background: C.coral, borderRadius: 8, cursor: "pointer" }}>Try Again</div>
+        </div>
+      )}
+      {phase === "solved" && (
+        <div style={{ marginTop: 12, padding: 12, background: `${C.success}1a`, borderRadius: 12, border: `1px solid ${C.success}66`, textAlign: "center" }}>
+          <div style={{ ...font(15, 700), color: C.success }}>✓ Everyone across safely!</div>
+          {moves <= puzzle.optimal && <div style={{ ...font(12, 600), color: C.gold, marginTop: 4 }}>★ Optimal solution!</div>}
+        </div>
+      )}
+
       <div style={{ ...font(11, 500), color: "rgba(255,255,255,0.35)", textAlign: "center", marginTop: 14, lineHeight: 1.5 }}>
-        Move discs between pegs — only one at a time, and never a larger disc on a smaller one.<br/>
-        Tap a peg to pick up its top disc, tap another peg to drop it.
+        Tap a creature on the bank to load into your shuttle. Then tap "Cross."<br/>
+        The shuttle needs you to move — leave nothing dangerous alone.
       </div>
     </GameChrome>
   );
@@ -1601,7 +1801,7 @@ const GAME_COMPONENTS = {
   focus: FocusGridGame,
   stroop: StroopGame,
   wordmaze: WordMazeGame,
-  bridge: MindBridgeGame,
+  bridge: ReefCrossingGame,
   dualn: DualNBackGame,
   ruleshift: RuleShiftGame,
 };
