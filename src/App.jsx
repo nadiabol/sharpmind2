@@ -37,445 +37,552 @@ const FontLoader = () => {
 };
 
 // ═══════════════════════════════════════════════════════════
-// REALISTIC SEA CREATURE SVGs
-// Each rendered with gradients, shading, and anatomical detail.
+// CUTE KAWAII SEA CREATURES
+// Style: big sparkly eyes, blush cheeks, soft rounded shapes,
+// thick warm-brown outlines, tiny smiles.
 // ═══════════════════════════════════════════════════════════
 
+// Reusable kawaii face — big sparkly eye + optional blush
+const KawaiiEyes = ({ cx, cy, spacing = 18, eyeSize = 7, dark = "#2a1810" }) => (
+  <g>
+    <ellipse cx={cx - spacing/2} cy={cy} rx={eyeSize} ry={eyeSize * 1.15} fill={dark}/>
+    <ellipse cx={cx + spacing/2} cy={cy} rx={eyeSize} ry={eyeSize * 1.15} fill={dark}/>
+    {/* big highlight top */}
+    <circle cx={cx - spacing/2 - eyeSize*0.25} cy={cy - eyeSize*0.35} r={eyeSize * 0.42} fill="white"/>
+    <circle cx={cx + spacing/2 - eyeSize*0.25} cy={cy - eyeSize*0.35} r={eyeSize * 0.42} fill="white"/>
+    {/* small highlight bottom */}
+    <circle cx={cx - spacing/2 + eyeSize*0.35} cy={cy + eyeSize*0.45} r={eyeSize * 0.2} fill="white"/>
+    <circle cx={cx + spacing/2 + eyeSize*0.35} cy={cy + eyeSize*0.45} r={eyeSize * 0.2} fill="white"/>
+  </g>
+);
+const Blush = ({ cx, cy, r = 5, color = "#ff9a8a" }) => (
+  <g opacity="0.7">
+    <ellipse cx={cx} cy={cy} rx={r} ry={r * 0.7} fill={color}/>
+  </g>
+);
+const Smile = ({ cx, cy, w = 6, color = "#3a2418" }) => (
+  <path d={`M${cx-w} ${cy} Q${cx} ${cy+w*0.6} ${cx+w} ${cy}`} stroke={color} strokeWidth="2" strokeLinecap="round" fill="none"/>
+);
+const OUTLINE = "#3a2418";
+
+// Goldfish — modeled on the cute kawaii reference. Round yellow body,
+// small dark eyes with sparkle, blush, tiny smile, fluffy dorsal fin.
 const Clownfish = ({ size = 100 }) => (
-  <svg width={size} height={size} viewBox="0 0 200 140">
+  <svg width={size} height={size} viewBox="0 0 200 160">
     <defs>
-      <radialGradient id="cf-b" cx="50%" cy="35%"><stop offset="0%" stopColor="#ffb074"/><stop offset="55%" stopColor="#ff7a2e"/><stop offset="100%" stopColor="#b84a08"/></radialGradient>
-      <radialGradient id="cf-belly" cx="50%" cy="80%"><stop offset="0%" stopColor="#fff5e8"/><stop offset="100%" stopColor="#ffd9a8"/></radialGradient>
+      <radialGradient id="cf-b" cx="40%" cy="35%"><stop offset="0%" stopColor="#ffe46a"/><stop offset="100%" stopColor="#f4b830"/></radialGradient>
+      <radialGradient id="cf-belly" cx="50%" cy="80%"><stop offset="0%" stopColor="#ffd968"/><stop offset="100%" stopColor="#e89c2a"/></radialGradient>
     </defs>
-    <path d="M30 70 Q10 50 5 35 Q8 55 15 70 Q8 85 5 105 Q10 90 30 70 Z" fill="url(#cf-b)" stroke="#1a1208" strokeWidth="1.5"/>
-    <ellipse cx="100" cy="70" rx="75" ry="42" fill="url(#cf-b)" stroke="#1a1208" strokeWidth="2"/>
-    <ellipse cx="100" cy="92" rx="55" ry="18" fill="url(#cf-belly)" opacity="0.55"/>
-    <path d="M60 35 Q55 70 62 105 L75 105 Q70 70 75 35 Z" fill="white" stroke="#1a1208" strokeWidth="2"/>
-    <path d="M115 32 Q110 70 117 108 L132 108 Q127 70 132 32 Z" fill="white" stroke="#1a1208" strokeWidth="2"/>
-    <path d="M155 50 Q152 70 156 92 L168 88 Q163 70 168 52 Z" fill="white" stroke="#1a1208" strokeWidth="2"/>
-    <path d="M80 30 Q100 18 130 30 Q125 35 100 32 Q90 33 80 30 Z" fill="url(#cf-b)" stroke="#1a1208" strokeWidth="1.5"/>
-    <path d="M95 85 Q88 105 100 110 Q110 102 105 88 Z" fill="#ff9050" stroke="#1a1208" strokeWidth="1.5"/>
-    <circle cx="160" cy="62" r="8" fill="white" stroke="#1a1208" strokeWidth="2"/>
-    <circle cx="161" cy="63" r="5" fill="#1a1208"/>
-    <circle cx="163" cy="60" r="1.8" fill="white"/>
-    <path d="M172 75 Q178 78 175 82" stroke="#1a1208" strokeWidth="1.5" fill="none"/>
+    <ellipse cx="100" cy="148" rx="60" ry="6" fill="#000" opacity="0.12"/>
+    {/* tail — fluffy fan */}
+    <path d="M148 80 Q172 60 182 50 Q176 78 178 88 Q186 100 180 118 Q170 112 158 102 Q150 95 148 90 Z"
+      fill="url(#cf-b)" stroke={OUTLINE} strokeWidth="3" strokeLinejoin="round"/>
+    {/* tail detail lines */}
+    <path d="M158 75 Q168 80 170 100" stroke={OUTLINE} strokeWidth="1.5" fill="none" opacity="0.5"/>
+    <path d="M155 92 Q165 100 168 112" stroke={OUTLINE} strokeWidth="1.5" fill="none" opacity="0.5"/>
+    {/* body — round and plump */}
+    <ellipse cx="92" cy="88" rx="62" ry="50" fill="url(#cf-b)" stroke={OUTLINE} strokeWidth="3"/>
+    {/* belly highlight — bottom darker */}
+    <path d="M40 100 Q92 130 145 100 Q140 130 92 134 Q44 130 40 100 Z" fill="url(#cf-belly)" opacity="0.6"/>
+    {/* top fin — wavy crown like reference */}
+    <path d="M68 42 Q78 22 92 38 Q102 26 118 38 Q124 28 130 42 Q120 44 110 42 Q98 44 88 42 Q78 44 68 42 Z"
+      fill="url(#cf-b)" stroke={OUTLINE} strokeWidth="2.5" strokeLinejoin="round"/>
+    {/* side fin */}
+    <path d="M85 110 Q72 128 90 130 Q98 124 96 112 Z" fill="url(#cf-belly)" stroke={OUTLINE} strokeWidth="2.5" strokeLinejoin="round"/>
+    {/* face — small cute eyes spaced apart */}
+    <g>
+      <ellipse cx="68" cy="82" rx="7" ry="8.5" fill="#2a1810"/>
+      <ellipse cx="100" cy="82" rx="7" ry="8.5" fill="#2a1810"/>
+      <circle cx="65" cy="78" r="3.2" fill="white"/>
+      <circle cx="97" cy="78" r="3.2" fill="white"/>
+      <circle cx="71" cy="86" r="1.5" fill="white"/>
+      <circle cx="103" cy="86" r="1.5" fill="white"/>
+    </g>
+    {/* peach blush */}
+    <Blush cx={62} cy={100} r={6} color="#ff8a7a"/>
+    {/* tiny smile */}
+    <Smile cx={85} cy={102} w={5}/>
   </svg>
 );
 
 const Seahorse = ({ size = 100 }) => (
   <svg width={size} height={size} viewBox="0 0 140 180">
     <defs>
-      <radialGradient id="sh-b" cx="50%" cy="40%"><stop offset="0%" stopColor="#ffd97a"/><stop offset="55%" stopColor="#e89c2a"/><stop offset="100%" stopColor="#a85e0a"/></radialGradient>
+      <radialGradient id="sh-b" cx="50%" cy="40%"><stop offset="0%" stopColor="#ffe28a"/><stop offset="100%" stopColor="#e89c2a"/></radialGradient>
     </defs>
-    <path d="M70 130 Q50 145 55 165 Q70 170 75 155 Q65 155 65 145" fill="none" stroke="url(#sh-b)" strokeWidth="14" strokeLinecap="round"/>
-    <path d="M75 35 Q95 50 90 75 Q75 100 65 115 Q60 125 70 130" fill="none" stroke="url(#sh-b)" strokeWidth="22" strokeLinecap="round"/>
-    <g stroke="#7a3f08" strokeWidth="1.3" fill="none" opacity="0.65">
-      <path d="M82 50 Q95 52 100 60"/><path d="M88 70 Q78 72 70 78"/>
-      <path d="M82 88 Q92 92 95 100"/><path d="M72 105 Q62 108 60 115"/>
-    </g>
-    <ellipse cx="70" cy="28" rx="18" ry="14" fill="url(#sh-b)" stroke="#1a1208" strokeWidth="1.5" transform="rotate(-15 70 28)"/>
-    <path d="M55 22 Q35 22 28 30 Q35 32 50 30 Z" fill="url(#sh-b)" stroke="#1a1208" strokeWidth="1.5"/>
-    <path d="M78 18 L82 8 L86 18 L90 10 L92 20" stroke="#1a1208" strokeWidth="1.5" fill="#e89c2a"/>
-    <path d="M90 60 Q110 55 115 75 Q105 75 92 72 Z" fill="#ffd97a" stroke="#1a1208" strokeWidth="1.2" opacity="0.85"/>
-    <g stroke="#1a1208" strokeWidth="0.8" opacity="0.4"><line x1="95" y1="62" x2="108" y2="62"/><line x1="93" y1="68" x2="110" y2="68"/></g>
-    <circle cx="68" cy="26" r="4" fill="white" stroke="#1a1208" strokeWidth="1.2"/>
-    <circle cx="68" cy="27" r="2.5" fill="#1a1208"/>
-    <circle cx="69" cy="25" r="0.8" fill="white"/>
-    <circle cx="85" cy="60" r="1.8" fill="#a85e0a" opacity="0.6"/>
-    <circle cx="75" cy="85" r="1.5" fill="#a85e0a" opacity="0.6"/>
-    <circle cx="82" cy="105" r="1.5" fill="#a85e0a" opacity="0.6"/>
+    <ellipse cx="70" cy="172" rx="35" ry="4" fill="#000" opacity="0.12"/>
+    {/* curly tail — single chunky stroke */}
+    <path d="M70 125 Q40 138 50 165 Q72 175 82 158 Q70 158 65 148" fill="none" stroke={OUTLINE} strokeWidth="22" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M70 125 Q40 138 50 165 Q72 175 82 158 Q70 158 65 148" fill="none" stroke="url(#sh-b)" strokeWidth="18" strokeLinecap="round" strokeLinejoin="round"/>
+    {/* body */}
+    <path d="M75 38 Q102 55 92 85 Q78 110 68 125" fill="none" stroke={OUTLINE} strokeWidth="24" strokeLinecap="round"/>
+    <path d="M75 38 Q102 55 92 85 Q78 110 68 125" fill="none" stroke="url(#sh-b)" strokeWidth="20" strokeLinecap="round"/>
+    {/* head — round and chubby */}
+    <ellipse cx="68" cy="34" rx="24" ry="20" fill="url(#sh-b)" stroke={OUTLINE} strokeWidth="3"/>
+    {/* snout */}
+    <path d="M48 30 Q28 30 24 38 Q38 40 52 36 Z" fill="url(#sh-b)" stroke={OUTLINE} strokeWidth="2.5" strokeLinejoin="round"/>
+    {/* crown spikes */}
+    <path d="M68 14 L72 4 L78 14 L84 6 L88 16" stroke={OUTLINE} strokeWidth="2.5" fill="#e89c2a" strokeLinejoin="round"/>
+    {/* dorsal fin */}
+    <path d="M95 60 Q116 55 118 80 Q105 78 92 75 Z" fill="#ffd97a" stroke={OUTLINE} strokeWidth="2.5" strokeLinejoin="round"/>
+    {/* face */}
+    <KawaiiEyes cx={70} cy={32} spacing={18} eyeSize={6}/>
+    <Blush cx={50} cy={42} r={3.5}/>
+    <Blush cx={86} cy={42} r={3.5}/>
+    <Smile cx={64} cy={48} w={4}/>
   </svg>
 );
 
 const Pufferfish = ({ size = 100 }) => (
-  <svg width={size} height={size} viewBox="0 0 160 160">
+  <svg width={size} height={size} viewBox="0 0 180 170">
     <defs>
-      <radialGradient id="pf-b" cx="40%" cy="40%"><stop offset="0%" stopColor="#ffe09a"/><stop offset="55%" stopColor="#d8a052"/><stop offset="100%" stopColor="#7a5018"/></radialGradient>
-      <radialGradient id="pf-belly" cx="50%" cy="80%"><stop offset="0%" stopColor="#fff8e0"/><stop offset="100%" stopColor="#e8d090"/></radialGradient>
+      <radialGradient id="pf-b" cx="40%" cy="35%"><stop offset="0%" stopColor="#ffe9a0"/><stop offset="100%" stopColor="#d8a052"/></radialGradient>
     </defs>
-    <path d="M130 75 Q150 60 155 50 Q152 75 148 80 Q152 90 155 105 Q150 90 130 80 Z" fill="url(#pf-b)" stroke="#1a1208" strokeWidth="1.5"/>
-    <circle cx="80" cy="80" r="60" fill="url(#pf-b)" stroke="#1a1208" strokeWidth="2"/>
-    <ellipse cx="80" cy="105" rx="45" ry="20" fill="url(#pf-belly)" opacity="0.8"/>
-    <g fill="url(#pf-b)" stroke="#1a1208" strokeWidth="1">
-      <path d="M35 50 L25 42 L38 47 Z"/><path d="M30 65 L18 62 L32 67 Z"/>
-      <path d="M30 85 L16 88 L32 88 Z"/><path d="M35 105 L22 112 L38 108 Z"/>
-      <path d="M50 125 L45 138 L55 128 Z"/><path d="M70 132 L68 145 L75 134 Z"/>
-      <path d="M95 128 L100 142 L100 130 Z"/><path d="M115 115 L125 122 L118 110 Z"/>
-      <path d="M122 95 L138 95 L122 90 Z"/><path d="M120 75 L135 70 L120 72 Z"/>
-      <path d="M55 35 L50 22 L60 32 Z"/><path d="M75 28 L75 15 L80 28 Z"/>
-      <path d="M95 30 L105 18 L100 32 Z"/>
+    <ellipse cx="90" cy="160" rx="55" ry="5" fill="#000" opacity="0.12"/>
+    {/* spikes */}
+    <g fill="url(#pf-b)" stroke={OUTLINE} strokeWidth="2" strokeLinejoin="round">
+      <path d="M30 60 L18 50 L35 58 Z"/><path d="M28 80 L12 78 L33 84 Z"/>
+      <path d="M30 100 L14 105 L34 100 Z"/><path d="M35 120 L22 132 L40 122 Z"/>
+      <path d="M55 138 L48 155 L62 138 Z"/><path d="M85 142 L85 158 L92 142 Z"/>
+      <path d="M110 140 L118 156 L115 138 Z"/><path d="M132 125 L145 138 L132 118 Z"/>
+      <path d="M142 105 L160 102 L142 100 Z"/><path d="M140 82 L158 78 L140 78 Z"/>
+      <path d="M132 60 L148 50 L132 56 Z"/><path d="M110 42 L118 28 L108 42 Z"/>
+      <path d="M85 38 L85 22 L92 38 Z"/><path d="M60 42 L48 28 L58 42 Z"/>
     </g>
-    <g fill="#5a3008" opacity="0.7">
-      <circle cx="65" cy="60" r="2"/><circle cx="85" cy="55" r="2.2"/>
-      <circle cx="100" cy="65" r="1.8"/><circle cx="70" cy="80" r="2"/>
-      <circle cx="95" cy="85" r="2.5"/><circle cx="75" cy="100" r="1.8"/>
-      <circle cx="100" cy="100" r="2"/><circle cx="55" cy="95" r="1.5"/>
-    </g>
-    <circle cx="62" cy="72" r="10" fill="white" stroke="#1a1208" strokeWidth="1.5"/>
-    <circle cx="98" cy="72" r="10" fill="white" stroke="#1a1208" strokeWidth="1.5"/>
-    <circle cx="64" cy="74" r="6" fill="#1a1208"/>
-    <circle cx="100" cy="74" r="6" fill="#1a1208"/>
-    <circle cx="66" cy="72" r="2" fill="white"/>
-    <circle cx="102" cy="72" r="2" fill="white"/>
-    <ellipse cx="80" cy="100" rx="9" ry="6" fill="#c4502a" stroke="#1a1208" strokeWidth="1.5"/>
-    <path d="M73 100 Q80 95 87 100" stroke="#1a1208" strokeWidth="1.2" fill="none"/>
+    {/* body — perfectly round */}
+    <circle cx="90" cy="90" r="58" fill="url(#pf-b)" stroke={OUTLINE} strokeWidth="3"/>
+    {/* belly highlight */}
+    <ellipse cx="90" cy="120" rx="40" ry="18" fill="#fff5d0" opacity="0.5"/>
+    {/* face */}
+    <KawaiiEyes cx={90} cy={82} spacing={36} eyeSize={9}/>
+    <Blush cx={64} cy={102} r={6}/>
+    <Blush cx={116} cy={102} r={6}/>
+    {/* tiny pursed mouth */}
+    <ellipse cx="90" cy="108" rx="5" ry="3.5" fill="#c4502a" stroke={OUTLINE} strokeWidth="2"/>
   </svg>
 );
 
 const SeaTurtle = ({ size = 100 }) => (
   <svg width={size} height={size} viewBox="0 0 200 160">
     <defs>
-      <radialGradient id="tt-s" cx="50%" cy="40%"><stop offset="0%" stopColor="#7da570"/><stop offset="60%" stopColor="#4a7341"/><stop offset="100%" stopColor="#2a4823"/></radialGradient>
-      <radialGradient id="tt-k" cx="50%" cy="50%"><stop offset="0%" stopColor="#a8b890"/><stop offset="100%" stopColor="#5a7048"/></radialGradient>
+      <radialGradient id="tt-s" cx="50%" cy="35%"><stop offset="0%" stopColor="#a8d29a"/><stop offset="100%" stopColor="#5a8a4a"/></radialGradient>
+      <radialGradient id="tt-k" cx="50%" cy="50%"><stop offset="0%" stopColor="#c8d8a8"/><stop offset="100%" stopColor="#7a9070"/></radialGradient>
     </defs>
-    <ellipse cx="40" cy="115" rx="22" ry="10" fill="url(#tt-k)" stroke="#1a1208" strokeWidth="1.5" transform="rotate(-20 40 115)"/>
-    <ellipse cx="160" cy="115" rx="22" ry="10" fill="url(#tt-k)" stroke="#1a1208" strokeWidth="1.5" transform="rotate(20 160 115)"/>
-    <path d="M25 70 Q5 60 0 75 Q8 95 35 90 Q45 80 25 70 Z" fill="url(#tt-k)" stroke="#1a1208" strokeWidth="1.5"/>
-    <path d="M175 70 Q195 60 200 75 Q192 95 165 90 Q155 80 175 70 Z" fill="url(#tt-k)" stroke="#1a1208" strokeWidth="1.5"/>
-    <ellipse cx="100" cy="32" rx="22" ry="20" fill="url(#tt-k)" stroke="#1a1208" strokeWidth="2"/>
-    <ellipse cx="100" cy="85" rx="65" ry="48" fill="url(#tt-s)" stroke="#1a1208" strokeWidth="2"/>
-    <g stroke="#2a4823" strokeWidth="1.4" fill="none" opacity="0.85">
-      <path d="M100 50 L80 65 L80 90 L100 105 L120 90 L120 65 Z" fill="#5a8a4a" opacity="0.45"/>
-      <path d="M60 75 L50 90 L70 110 L80 90 Z" fill="#5a8a4a" opacity="0.4"/>
-      <path d="M140 75 L150 90 L130 110 L120 90 Z" fill="#5a8a4a" opacity="0.4"/>
-      <path d="M80 110 L100 130 L120 110" fill="#3a6831" opacity="0.5"/>
-      <path d="M100 50 L100 105"/><path d="M80 65 L60 75"/><path d="M120 65 L140 75"/>
+    <ellipse cx="100" cy="150" rx="65" ry="5" fill="#000" opacity="0.12"/>
+    {/* back flippers */}
+    <ellipse cx="42" cy="115" rx="22" ry="11" fill="url(#tt-k)" stroke={OUTLINE} strokeWidth="2.5" transform="rotate(-20 42 115)"/>
+    <ellipse cx="158" cy="115" rx="22" ry="11" fill="url(#tt-k)" stroke={OUTLINE} strokeWidth="2.5" transform="rotate(20 158 115)"/>
+    {/* front flippers */}
+    <path d="M28 75 Q8 65 5 80 Q12 95 38 90 Q48 80 28 75 Z" fill="url(#tt-k)" stroke={OUTLINE} strokeWidth="2.5" strokeLinejoin="round"/>
+    <path d="M172 75 Q192 65 195 80 Q188 95 162 90 Q152 80 172 75 Z" fill="url(#tt-k)" stroke={OUTLINE} strokeWidth="2.5" strokeLinejoin="round"/>
+    {/* head — bigger and rounder, more kawaii */}
+    <ellipse cx="100" cy="36" rx="26" ry="22" fill="url(#tt-k)" stroke={OUTLINE} strokeWidth="3"/>
+    {/* shell */}
+    <ellipse cx="100" cy="90" rx="62" ry="46" fill="url(#tt-s)" stroke={OUTLINE} strokeWidth="3"/>
+    {/* shell pattern — simple hexagons */}
+    <g stroke={OUTLINE} strokeWidth="2" fill="none" opacity="0.85" strokeLinejoin="round">
+      <path d="M100 55 L82 70 L82 95 L100 108 L118 95 L118 70 Z" fill="#7da570" fillOpacity="0.5"/>
+      <path d="M60 80 L52 95 L70 110 L80 95 Z" fill="#7da570" fillOpacity="0.4"/>
+      <path d="M140 80 L148 95 L130 110 L120 95 Z" fill="#7da570" fillOpacity="0.4"/>
     </g>
-    <ellipse cx="100" cy="60" rx="55" ry="12" fill="white" opacity="0.15"/>
-    <circle cx="92" cy="28" r="3.5" fill="white" stroke="#1a1208" strokeWidth="1"/>
-    <circle cx="92" cy="28" r="2" fill="#1a1208"/>
-    <circle cx="108" cy="28" r="3.5" fill="white" stroke="#1a1208" strokeWidth="1"/>
-    <circle cx="108" cy="28" r="2" fill="#1a1208"/>
-    <circle cx="97" cy="40" r="0.8" fill="#1a1208"/>
-    <circle cx="103" cy="40" r="0.8" fill="#1a1208"/>
+    {/* shell highlight */}
+    <ellipse cx="100" cy="62" rx="50" ry="10" fill="white" opacity="0.25"/>
+    {/* face */}
+    <KawaiiEyes cx={100} cy={32} spacing={20} eyeSize={6.5}/>
+    <Blush cx={82} cy={44}/>
+    <Blush cx={118} cy={44}/>
+    <Smile cx={100} cy={48} w={5}/>
   </svg>
 );
 
 const Octopus = ({ size = 100 }) => (
-  <svg width={size} height={size} viewBox="0 0 200 180">
+  <svg width={size} height={size} viewBox="0 0 200 200">
     <defs>
-      <radialGradient id="oc-b" cx="50%" cy="35%"><stop offset="0%" stopColor="#ff9eb1"/><stop offset="60%" stopColor="#c4516a"/><stop offset="100%" stopColor="#7a2a3f"/></radialGradient>
+      <radialGradient id="oc-b" cx="50%" cy="35%"><stop offset="0%" stopColor="#ffb8c8"/><stop offset="100%" stopColor="#d4708c"/></radialGradient>
     </defs>
-    <path d="M60 90 Q30 110 25 140 Q35 155 45 145 Q50 130 55 115" fill="url(#oc-b)" stroke="#1a1208" strokeWidth="2"/>
-    <path d="M75 100 Q50 130 55 165 Q70 175 75 160 Q78 140 80 120" fill="url(#oc-b)" stroke="#1a1208" strokeWidth="2"/>
-    <path d="M95 105 Q85 140 95 170 Q105 172 105 155 Q102 130 100 115" fill="url(#oc-b)" stroke="#1a1208" strokeWidth="2"/>
-    <path d="M115 105 Q125 140 130 170 Q140 168 138 150 Q130 125 122 110" fill="url(#oc-b)" stroke="#1a1208" strokeWidth="2"/>
-    <path d="M130 100 Q155 130 165 160 Q175 155 170 138 Q155 115 140 105" fill="url(#oc-b)" stroke="#1a1208" strokeWidth="2"/>
-    <path d="M140 90 Q170 110 178 138 Q188 135 182 118 Q168 100 150 92" fill="url(#oc-b)" stroke="#1a1208" strokeWidth="2"/>
-    <g fill="#ffc8d6" stroke="#7a2a3f" strokeWidth="0.7">
-      <circle cx="35" cy="135" r="2.4"/><circle cx="42" cy="148" r="2.4"/>
-      <circle cx="60" cy="150" r="2.4"/><circle cx="68" cy="165" r="2.4"/>
-      <circle cx="95" cy="160" r="2.4"/><circle cx="100" cy="170" r="2.4"/>
-      <circle cx="125" cy="160" r="2.4"/><circle cx="135" cy="155" r="2.4"/>
-      <circle cx="160" cy="150" r="2.4"/><circle cx="170" cy="135" r="2.4"/>
+    <ellipse cx="100" cy="190" rx="70" ry="5" fill="#000" opacity="0.12"/>
+    {/* tentacles — 8 wavy */}
+    <g fill="url(#oc-b)" stroke={OUTLINE} strokeWidth="2.5" strokeLinejoin="round">
+      <path d="M50 110 Q30 130 32 155 Q42 165 48 150 Q52 135 58 122 Z"/>
+      <path d="M68 120 Q55 150 62 175 Q75 178 76 160 Q76 140 78 128 Z"/>
+      <path d="M88 125 Q82 155 88 180 Q98 182 98 165 Q96 145 96 132 Z"/>
+      <path d="M112 125 Q118 155 112 180 Q102 182 102 165 Q104 145 104 132 Z"/>
+      <path d="M132 120 Q145 150 138 175 Q125 178 124 160 Q124 140 122 128 Z"/>
+      <path d="M150 110 Q170 130 168 155 Q158 165 152 150 Q148 135 142 122 Z"/>
     </g>
-    <ellipse cx="100" cy="65" rx="55" ry="50" fill="url(#oc-b)" stroke="#1a1208" strokeWidth="2"/>
-    <ellipse cx="85" cy="40" rx="6" ry="4" fill="#ff7a90" opacity="0.6"/>
-    <ellipse cx="115" cy="40" rx="6" ry="4" fill="#ff7a90" opacity="0.6"/>
-    <ellipse cx="100" cy="55" rx="5" ry="3" fill="#ff7a90" opacity="0.5"/>
-    <ellipse cx="82" cy="65" rx="11" ry="9" fill="white" stroke="#1a1208" strokeWidth="2"/>
-    <ellipse cx="118" cy="65" rx="11" ry="9" fill="white" stroke="#1a1208" strokeWidth="2"/>
-    <ellipse cx="83" cy="67" rx="6" ry="5" fill="#1a1208"/>
-    <ellipse cx="119" cy="67" rx="6" ry="5" fill="#1a1208"/>
-    <rect x="80" y="63" width="3" height="6" fill="#1a1208"/>
-    <rect x="116" y="63" width="3" height="6" fill="#1a1208"/>
-    <circle cx="86" cy="64" r="1.5" fill="white"/>
-    <circle cx="122" cy="64" r="1.5" fill="white"/>
+    {/* suckers */}
+    <g fill="#ffd0dc" stroke={OUTLINE} strokeWidth="1" opacity="0.7">
+      <circle cx="42" cy="145" r="2"/><circle cx="55" cy="158" r="2"/>
+      <circle cx="68" cy="170" r="2"/><circle cx="92" cy="170" r="2"/>
+      <circle cx="108" cy="170" r="2"/><circle cx="132" cy="170" r="2"/>
+      <circle cx="145" cy="158" r="2"/><circle cx="158" cy="145" r="2"/>
+    </g>
+    {/* head — big rounded dome */}
+    <ellipse cx="100" cy="75" rx="60" ry="56" fill="url(#oc-b)" stroke={OUTLINE} strokeWidth="3"/>
+    {/* head highlight */}
+    <ellipse cx="80" cy="45" rx="25" ry="12" fill="white" opacity="0.35"/>
+    {/* face */}
+    <KawaiiEyes cx={100} cy={75} spacing={42} eyeSize={11}/>
+    <Blush cx={68} cy={95}/>
+    <Blush cx={132} cy={95}/>
+    <Smile cx={100} cy={102} w={7}/>
   </svg>
 );
 
 const Crab = ({ size = 100 }) => (
   <svg width={size} height={size} viewBox="0 0 200 160">
-    <defs><radialGradient id="cr-b" cx="50%" cy="40%"><stop offset="0%" stopColor="#ff8a6a"/><stop offset="55%" stopColor="#d24020"/><stop offset="100%" stopColor="#7a1808"/></radialGradient></defs>
-    <g fill="url(#cr-b)" stroke="#1a1208" strokeWidth="1.5">
-      <path d="M50 90 Q25 95 15 115 Q25 120 35 115 Q45 105 50 95 Z"/>
-      <path d="M45 75 Q18 70 5 85 Q12 95 25 90 Q38 85 50 80 Z"/>
-      <path d="M50 60 Q22 50 12 35 Q22 30 35 38 Q45 50 55 65 Z"/>
-      <path d="M150 90 Q175 95 185 115 Q175 120 165 115 Q155 105 150 95 Z"/>
-      <path d="M155 75 Q182 70 195 85 Q188 95 175 90 Q162 85 150 80 Z"/>
-      <path d="M150 60 Q178 50 188 35 Q178 30 165 38 Q155 50 145 65 Z"/>
+    <defs>
+      <radialGradient id="cr-b" cx="50%" cy="40%"><stop offset="0%" stopColor="#ff9a8a"/><stop offset="100%" stopColor="#d24020"/></radialGradient>
+    </defs>
+    <ellipse cx="100" cy="148" rx="70" ry="5" fill="#000" opacity="0.12"/>
+    {/* legs */}
+    <g fill="url(#cr-b)" stroke={OUTLINE} strokeWidth="2.5" strokeLinejoin="round">
+      <path d="M52 95 Q30 100 18 118 Q28 125 38 118 Q48 108 55 100 Z"/>
+      <path d="M48 80 Q22 78 10 90 Q15 100 28 95 Q42 90 52 85 Z"/>
+      <path d="M50 65 Q25 55 18 40 Q28 35 38 45 Q48 58 55 70 Z"/>
+      <path d="M148 95 Q170 100 182 118 Q172 125 162 118 Q152 108 145 100 Z"/>
+      <path d="M152 80 Q178 78 190 90 Q185 100 172 95 Q158 90 148 85 Z"/>
+      <path d="M150 65 Q175 55 182 40 Q172 35 162 45 Q152 58 145 70 Z"/>
     </g>
-    <path d="M45 85 Q25 78 8 65 Q0 70 5 80 Q18 90 35 95 Z" fill="url(#cr-b)" stroke="#1a1208" strokeWidth="1.5"/>
-    <path d="M8 65 Q0 55 10 50 Q22 55 25 65 Q18 70 8 65 Z" fill="url(#cr-b)" stroke="#1a1208" strokeWidth="2"/>
-    <path d="M10 50 Q18 58 25 62 Q22 50 15 45 Z" fill="url(#cr-b)" stroke="#1a1208" strokeWidth="1.5"/>
-    <path d="M155 85 Q175 78 192 65 Q200 70 195 80 Q182 90 165 95 Z" fill="url(#cr-b)" stroke="#1a1208" strokeWidth="1.5"/>
-    <path d="M192 65 Q200 55 190 50 Q178 55 175 65 Q182 70 192 65 Z" fill="url(#cr-b)" stroke="#1a1208" strokeWidth="2"/>
-    <path d="M190 50 Q182 58 175 62 Q178 50 185 45 Z" fill="url(#cr-b)" stroke="#1a1208" strokeWidth="1.5"/>
-    <ellipse cx="100" cy="80" rx="55" ry="38" fill="url(#cr-b)" stroke="#1a1208" strokeWidth="2"/>
-    <path d="M60 75 Q100 65 140 75" stroke="#7a1808" strokeWidth="1.4" fill="none" opacity="0.7"/>
-    <path d="M70 90 Q100 95 130 90" stroke="#7a1808" strokeWidth="1.4" fill="none" opacity="0.7"/>
-    <circle cx="80" cy="68" r="3" fill="#ff5a3a" opacity="0.7"/>
-    <circle cx="100" cy="62" r="3" fill="#ff5a3a" opacity="0.7"/>
-    <circle cx="120" cy="68" r="3" fill="#ff5a3a" opacity="0.7"/>
-    <line x1="88" y1="55" x2="86" y2="42" stroke="#1a1208" strokeWidth="2"/>
-    <line x1="112" y1="55" x2="114" y2="42" stroke="#1a1208" strokeWidth="2"/>
-    <circle cx="86" cy="40" r="4.5" fill="#1a1208"/>
-    <circle cx="114" cy="40" r="4.5" fill="#1a1208"/>
-    <circle cx="87" cy="39" r="1.5" fill="white"/>
-    <circle cx="115" cy="39" r="1.5" fill="white"/>
-    <path d="M92 100 Q100 105 108 100" stroke="#1a1208" strokeWidth="1.5" fill="none"/>
+    {/* big claws */}
+    <ellipse cx="20" cy="75" rx="16" ry="14" fill="url(#cr-b)" stroke={OUTLINE} strokeWidth="3" transform="rotate(-20 20 75)"/>
+    <path d="M12 62 Q20 70 26 70 Q22 60 16 58 Z" fill="url(#cr-b)" stroke={OUTLINE} strokeWidth="2"/>
+    <ellipse cx="180" cy="75" rx="16" ry="14" fill="url(#cr-b)" stroke={OUTLINE} strokeWidth="3" transform="rotate(20 180 75)"/>
+    <path d="M188 62 Q180 70 174 70 Q178 60 184 58 Z" fill="url(#cr-b)" stroke={OUTLINE} strokeWidth="2"/>
+    {/* body — rounded */}
+    <ellipse cx="100" cy="85" rx="50" ry="38" fill="url(#cr-b)" stroke={OUTLINE} strokeWidth="3"/>
+    {/* shell highlight */}
+    <ellipse cx="100" cy="65" rx="35" ry="8" fill="white" opacity="0.3"/>
+    {/* eye stalks */}
+    <line x1="88" y1="58" x2="84" y2="42" stroke={OUTLINE} strokeWidth="2.5" strokeLinecap="round"/>
+    <line x1="112" y1="58" x2="116" y2="42" stroke={OUTLINE} strokeWidth="2.5" strokeLinecap="round"/>
+    {/* eyes on stalks — big and cute */}
+    <circle cx="84" cy="40" r="8" fill="white" stroke={OUTLINE} strokeWidth="2.5"/>
+    <circle cx="116" cy="40" r="8" fill="white" stroke={OUTLINE} strokeWidth="2.5"/>
+    <circle cx="85" cy="42" r="5" fill="#2a1810"/>
+    <circle cx="117" cy="42" r="5" fill="#2a1810"/>
+    <circle cx="83" cy="40" r="2.2" fill="white"/>
+    <circle cx="115" cy="40" r="2.2" fill="white"/>
+    <Blush cx={75} cy={92}/>
+    <Blush cx={125} cy={92}/>
+    <Smile cx={100} cy={95} w={6}/>
   </svg>
 );
 
 const Stingray = ({ size = 100 }) => (
   <svg width={size} height={size} viewBox="0 0 200 180">
-    <defs><radialGradient id="sr-b" cx="50%" cy="35%"><stop offset="0%" stopColor="#c8a878"/><stop offset="60%" stopColor="#8a6838"/><stop offset="100%" stopColor="#4a3818"/></radialGradient></defs>
-    <path d="M100 130 Q105 150 115 165 Q125 175 130 175" stroke="#5a4020" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
-    <circle cx="118" cy="170" r="2.5" fill="#3a2810"/>
-    <path d="M120 168 L128 175 L122 172 Z" fill="#1a1008"/>
-    <path d="M100 25 Q30 40 25 100 Q35 135 100 130 Q165 135 175 100 Q170 40 100 25 Z" fill="url(#sr-b)" stroke="#1a1208" strokeWidth="2"/>
-    <g fill="#4a3018" opacity="0.7">
-      <circle cx="70" cy="70" r="4"/><circle cx="100" cy="65" r="5"/><circle cx="130" cy="70" r="4"/>
-      <circle cx="55" cy="95" r="3.5"/><circle cx="80" cy="100" r="4"/><circle cx="120" cy="100" r="4"/>
-      <circle cx="145" cy="95" r="3.5"/><circle cx="100" cy="110" r="3"/>
-      <circle cx="85" cy="85" r="2.5"/><circle cx="115" cy="85" r="2.5"/>
+    <defs>
+      <radialGradient id="sr-b" cx="50%" cy="35%"><stop offset="0%" stopColor="#d4b890"/><stop offset="100%" stopColor="#8a6838"/></radialGradient>
+    </defs>
+    <ellipse cx="100" cy="165" rx="60" ry="5" fill="#000" opacity="0.12"/>
+    {/* tail */}
+    <path d="M100 130 Q108 145 118 160 Q125 168 130 168" stroke={OUTLINE} strokeWidth="4" fill="none" strokeLinecap="round"/>
+    <path d="M100 130 Q108 145 118 160 Q125 168 130 168" stroke="#8a6838" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+    <circle cx="128" cy="166" r="4" fill="#8a6838" stroke={OUTLINE} strokeWidth="2"/>
+    {/* wide diamond body */}
+    <path d="M100 30 Q35 45 28 95 Q42 130 100 130 Q158 130 172 95 Q165 45 100 30 Z" fill="url(#sr-b)" stroke={OUTLINE} strokeWidth="3" strokeLinejoin="round"/>
+    {/* spots */}
+    <g fill="#5a4020" opacity="0.5">
+      <circle cx="60" cy="80" r="4"/><circle cx="140" cy="80" r="4"/>
+      <circle cx="80" cy="105" r="3"/><circle cx="120" cy="105" r="3"/>
+      <circle cx="100" cy="90" r="3.5"/>
     </g>
-    <g fill="#e8d098" opacity="0.5">
-      <circle cx="60" cy="80" r="2"/><circle cx="90" cy="85" r="1.5"/>
-      <circle cx="140" cy="80" r="2"/><circle cx="110" cy="95" r="1.5"/>
-    </g>
-    <ellipse cx="100" cy="50" rx="50" ry="10" fill="#e8c890" opacity="0.4"/>
-    <ellipse cx="85" cy="52" rx="4" ry="3" fill="#1a1208"/>
-    <ellipse cx="115" cy="52" rx="4" ry="3" fill="#1a1208"/>
-    <circle cx="86" cy="51" r="1" fill="white"/>
-    <circle cx="116" cy="51" r="1" fill="white"/>
-    <ellipse cx="88" cy="60" rx="3" ry="1.5" fill="#3a2810"/>
-    <ellipse cx="112" cy="60" rx="3" ry="1.5" fill="#3a2810"/>
+    {/* highlight */}
+    <ellipse cx="100" cy="55" rx="45" ry="8" fill="white" opacity="0.3"/>
+    {/* face */}
+    <KawaiiEyes cx={100} cy={62} spacing={26} eyeSize={7}/>
+    <Blush cx={80} cy={78}/>
+    <Blush cx={120} cy={78}/>
+    <Smile cx={100} cy={82} w={5}/>
   </svg>
 );
 
 const MantaRay = ({ size = 100 }) => (
-  <svg width={size} height={size} viewBox="0 0 220 140">
+  <svg width={size} height={size} viewBox="0 0 220 150">
     <defs>
-      <linearGradient id="mr-b" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="#2a3a55"/><stop offset="50%" stopColor="#1a2640"/><stop offset="100%" stopColor="#0a1428"/></linearGradient>
-      <linearGradient id="mr-y" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="#d8e0ea"/><stop offset="100%" stopColor="#9aa8bc"/></linearGradient>
+      <linearGradient id="mr-b" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="#5a7596"/><stop offset="100%" stopColor="#28405a"/></linearGradient>
     </defs>
-    <path d="M110 95 Q115 110 118 130 Q110 132 108 110 Z" fill="url(#mr-b)" stroke="#0a1428" strokeWidth="1.5"/>
-    <path d="M110 30 Q50 25 15 60 Q5 70 20 78 Q60 75 90 80 Q110 85 130 80 Q160 75 200 78 Q215 70 205 60 Q170 25 110 30 Z" fill="url(#mr-b)" stroke="#0a1428" strokeWidth="2"/>
-    <ellipse cx="110" cy="75" rx="35" ry="8" fill="url(#mr-y)" opacity="0.3"/>
-    <g fill="white" opacity="0.75">
-      <circle cx="70" cy="55" r="2.5"/><circle cx="90" cy="50" r="2"/>
-      <circle cx="130" cy="50" r="2"/><circle cx="150" cy="55" r="2.5"/>
-      <circle cx="105" cy="45" r="1.8"/><circle cx="115" cy="45" r="1.8"/>
-      <circle cx="50" cy="65" r="1.8"/><circle cx="170" cy="65" r="1.8"/>
+    <ellipse cx="110" cy="140" rx="70" ry="5" fill="#000" opacity="0.12"/>
+    {/* wide body */}
+    <path d="M110 35 Q50 32 18 65 Q8 78 22 85 Q60 82 92 88 Q110 92 128 88 Q160 82 198 85 Q212 78 202 65 Q170 32 110 35 Z" fill="url(#mr-b)" stroke={OUTLINE} strokeWidth="3" strokeLinejoin="round"/>
+    {/* belly speckles */}
+    <g fill="white" opacity="0.7">
+      <circle cx="78" cy="62" r="2"/><circle cx="142" cy="62" r="2"/>
+      <circle cx="100" cy="55" r="1.6"/><circle cx="120" cy="55" r="1.6"/>
     </g>
-    <path d="M95 40 Q88 30 92 22 Q98 32 100 42 Z" fill="url(#mr-b)" stroke="#0a1428" strokeWidth="1.5"/>
-    <path d="M125 40 Q132 30 128 22 Q122 32 120 42 Z" fill="url(#mr-b)" stroke="#0a1428" strokeWidth="1.5"/>
-    <ellipse cx="110" cy="43" rx="8" ry="2" fill="#0a1428"/>
-    <circle cx="98" cy="42" r="2" fill="#1a1208"/>
-    <circle cx="122" cy="42" r="2" fill="#1a1208"/>
-    <path d="M30 60 Q60 50 90 55" stroke="white" strokeWidth="1" fill="none" opacity="0.3"/>
-    <path d="M130 55 Q160 50 190 60" stroke="white" strokeWidth="1" fill="none" opacity="0.3"/>
+    {/* cephalic horns */}
+    <path d="M96 42 Q88 28 96 22 Q102 32 102 44 Z" fill="url(#mr-b)" stroke={OUTLINE} strokeWidth="2.5" strokeLinejoin="round"/>
+    <path d="M124 42 Q132 28 124 22 Q118 32 118 44 Z" fill="url(#mr-b)" stroke={OUTLINE} strokeWidth="2.5" strokeLinejoin="round"/>
+    {/* small tail */}
+    <path d="M110 95 Q113 115 118 130 Q112 132 108 110 Z" fill="url(#mr-b)" stroke={OUTLINE} strokeWidth="2.5" strokeLinejoin="round"/>
+    {/* face */}
+    <KawaiiEyes cx={110} cy={62} spacing={32} eyeSize={7.5}/>
+    <Blush cx={88} cy={78} color="#ff7a8a"/>
+    <Blush cx={132} cy={78} color="#ff7a8a"/>
+    <Smile cx={110} cy={82} w={6} color="#2a3548"/>
   </svg>
 );
 
 const Jellyfish = ({ size = 100 }) => (
   <svg width={size} height={size} viewBox="0 0 180 200">
     <defs>
-      <radialGradient id="jf-b" cx="50%" cy="40%"><stop offset="0%" stopColor="rgba(255,180,220,0.95)"/><stop offset="50%" stopColor="rgba(220,130,200,0.85)"/><stop offset="100%" stopColor="rgba(140,80,160,0.6)"/></radialGradient>
-      <radialGradient id="jf-g" cx="50%" cy="50%"><stop offset="0%" stopColor="rgba(255,200,230,0.5)"/><stop offset="100%" stopColor="rgba(255,200,230,0)"/></radialGradient>
+      <radialGradient id="jf-b" cx="50%" cy="40%"><stop offset="0%" stopColor="#ffc4dc"/><stop offset="100%" stopColor="#d490c0"/></radialGradient>
     </defs>
-    <ellipse cx="90" cy="65" rx="85" ry="60" fill="url(#jf-g)"/>
-    <g stroke="rgba(220,130,200,0.7)" strokeWidth="2.5" fill="none" strokeLinecap="round">
-      <path d="M50 85 Q45 130 55 165 Q48 180 52 195"/>
-      <path d="M65 90 Q60 140 68 175 Q62 190 68 198"/>
-      <path d="M80 92 Q78 145 82 185"/>
-      <path d="M95 92 Q98 145 92 195"/>
-      <path d="M110 90 Q115 140 108 190"/>
-      <path d="M125 88 Q130 135 122 175 Q128 190 124 198"/>
-      <path d="M138 85 Q145 130 135 165 Q142 180 138 195"/>
+    <ellipse cx="90" cy="195" rx="55" ry="4" fill="#000" opacity="0.1"/>
+    {/* tentacles — wavy */}
+    <g stroke="#d490c0" strokeWidth="4" fill="none" strokeLinecap="round" opacity="0.95">
+      <path d="M50 90 Q42 120 50 150 Q42 170 50 195"/>
+      <path d="M70 92 Q62 130 70 165 Q62 180 70 198"/>
+      <path d="M90 92 Q90 135 90 180"/>
+      <path d="M110 92 Q118 130 110 165 Q118 180 110 198"/>
+      <path d="M130 90 Q138 120 130 150 Q138 170 130 195"/>
     </g>
-    <g fill="rgba(255,150,200,0.6)" stroke="rgba(220,100,180,0.8)" strokeWidth="1">
-      <path d="M75 75 Q70 100 78 130 Q82 125 80 100 Q82 80 75 75 Z"/>
-      <path d="M90 75 Q88 105 92 135 Q96 130 94 100 Q96 80 90 75 Z"/>
-      <path d="M105 75 Q110 100 102 130 Q98 125 100 100 Q98 80 105 75 Z"/>
+    <g stroke={OUTLINE} strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.7">
+      <path d="M50 90 Q42 120 50 150 Q42 170 50 195"/>
+      <path d="M70 92 Q62 130 70 165 Q62 180 70 198"/>
+      <path d="M90 92 Q90 135 90 180"/>
+      <path d="M110 92 Q118 130 110 165 Q118 180 110 198"/>
+      <path d="M130 90 Q138 120 130 150 Q138 170 130 195"/>
     </g>
-    <path d="M20 70 Q25 20 90 15 Q155 20 160 70 Q155 90 90 90 Q25 90 20 70 Z" fill="url(#jf-b)" stroke="rgba(140,60,140,0.7)" strokeWidth="1.5"/>
-    <g stroke="rgba(255,200,230,0.6)" strokeWidth="1" fill="none">
-      <ellipse cx="90" cy="60" rx="55" ry="20"/>
-      <ellipse cx="90" cy="55" rx="40" ry="14"/>
+    {/* dome */}
+    <path d="M20 75 Q22 25 90 22 Q158 25 160 75 Q145 92 90 92 Q35 92 20 75 Z" fill="url(#jf-b)" stroke={OUTLINE} strokeWidth="3" strokeLinejoin="round"/>
+    {/* dome highlight */}
+    <ellipse cx="68" cy="38" rx="28" ry="9" fill="white" opacity="0.55"/>
+    {/* scallop edge */}
+    <g stroke={OUTLINE} strokeWidth="2" fill="rgba(212,144,192,0.5)" strokeLinejoin="round">
+      <path d="M30 80 Q40 92 50 80"/>
+      <path d="M70 84 Q80 95 90 84"/>
+      <path d="M110 84 Q120 95 130 84"/>
+      <path d="M150 80 Q140 92 130 80"/>
     </g>
-    <ellipse cx="70" cy="35" rx="30" ry="10" fill="rgba(255,240,250,0.5)"/>
-    <circle cx="80" cy="60" r="5" fill="rgba(200,100,170,0.5)"/>
-    <circle cx="100" cy="60" r="5" fill="rgba(200,100,170,0.5)"/>
-    <circle cx="90" cy="68" r="4" fill="rgba(200,100,170,0.5)"/>
+    {/* face */}
+    <KawaiiEyes cx={90} cy={58} spacing={28} eyeSize={8}/>
+    <Blush cx={68} cy={75}/>
+    <Blush cx={112} cy={75}/>
+    <Smile cx={90} cy={78} w={5}/>
   </svg>
 );
 
 const Hammerhead = ({ size = 100 }) => (
-  <svg width={size} height={size} viewBox="0 0 220 120">
+  <svg width={size} height={size} viewBox="0 0 220 140">
     <defs>
-      <linearGradient id="hh-b" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="#7a8a9a"/><stop offset="50%" stopColor="#4a5a70"/><stop offset="100%" stopColor="#2a3548"/></linearGradient>
-      <linearGradient id="hh-y" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="#c8d0dc"/><stop offset="100%" stopColor="#9aa4b4"/></linearGradient>
+      <linearGradient id="hh-b" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="#9aaabc"/><stop offset="100%" stopColor="#5a6a80"/></linearGradient>
     </defs>
-    <path d="M25 60 Q5 35 0 20 Q8 45 15 60 Q8 75 0 100 Q5 85 25 60 Z" fill="url(#hh-b)" stroke="#1a1208" strokeWidth="1.5"/>
-    <path d="M25 50 Q25 70 25 70 L145 75 Q150 60 145 45 L25 50 Z" fill="url(#hh-b)" stroke="#1a1208" strokeWidth="2"/>
-    <path d="M30 68 Q90 78 142 70 Q90 80 30 68 Z" fill="url(#hh-y)"/>
-    <path d="M80 47 L95 25 L110 47 Z" fill="url(#hh-b)" stroke="#1a1208" strokeWidth="1.5"/>
-    <path d="M50 50 L58 38 L65 50 Z" fill="url(#hh-b)" stroke="#1a1208" strokeWidth="1.5"/>
-    <path d="M115 65 Q130 90 100 95 Q95 78 105 68 Z" fill="url(#hh-b)" stroke="#1a1208" strokeWidth="1.5"/>
-    <path d="M145 30 Q145 25 165 22 Q200 18 210 35 Q210 55 195 60 L175 65 Q165 65 150 65 Q145 60 145 50 Z" fill="url(#hh-b)" stroke="#1a1208" strokeWidth="2"/>
-    <path d="M165 22 Q185 12 200 18 Q205 22 200 25 Q180 25 165 25 Z" fill="url(#hh-b)" stroke="#1a1208" strokeWidth="1.5"/>
-    <circle cx="203" cy="40" r="4" fill="white" stroke="#1a1208" strokeWidth="1.5"/>
-    <circle cx="204" cy="41" r="2.5" fill="#1a1208"/>
-    <circle cx="205" cy="40" r="0.8" fill="white"/>
-    <path d="M155 50 Q158 55 155 60" stroke="#1a1208" strokeWidth="1.2" fill="none"/>
-    <path d="M160 50 Q163 55 160 60" stroke="#1a1208" strokeWidth="1.2" fill="none"/>
-    <path d="M165 50 Q168 55 165 60" stroke="#1a1208" strokeWidth="1.2" fill="none"/>
+    <ellipse cx="110" cy="128" rx="80" ry="5" fill="#000" opacity="0.12"/>
+    {/* tail */}
+    <path d="M25 70 Q5 45 8 30 Q18 50 28 70 Q18 88 8 110 Q5 95 25 70 Z" fill="url(#hh-b)" stroke={OUTLINE} strokeWidth="2.5" strokeLinejoin="round"/>
+    {/* body — chunky and rounded */}
+    <path d="M28 55 Q22 80 28 95 L130 95 Q140 80 130 55 L28 55 Z" fill="url(#hh-b)" stroke={OUTLINE} strokeWidth="3" strokeLinejoin="round"/>
+    {/* belly */}
+    <path d="M35 85 Q90 95 130 85 Q90 95 35 85 Z" fill="#c8d0dc"/>
+    {/* dorsal fin */}
+    <path d="M75 55 L90 32 L110 55 Z" fill="url(#hh-b)" stroke={OUTLINE} strokeWidth="2.5" strokeLinejoin="round"/>
+    {/* belly fin */}
+    <path d="M105 90 Q118 110 95 110 Q88 100 100 92 Z" fill="url(#hh-b)" stroke={OUTLINE} strokeWidth="2.5" strokeLinejoin="round"/>
+    {/* hammer head — wide T-shape */}
+    <path d="M130 38 Q130 32 152 28 Q195 24 205 45 Q205 65 188 70 L168 75 Q145 75 130 75 Q120 65 120 55 Q120 45 130 38 Z" fill="url(#hh-b)" stroke={OUTLINE} strokeWidth="3" strokeLinejoin="round"/>
+    {/* eyes on hammer ends — big and adorable */}
+    <circle cx="142" cy="40" r="9" fill="white" stroke={OUTLINE} strokeWidth="2.5"/>
+    <circle cx="200" cy="48" r="9" fill="white" stroke={OUTLINE} strokeWidth="2.5"/>
+    <circle cx="143" cy="42" r="5.5" fill="#2a1810"/>
+    <circle cx="201" cy="50" r="5.5" fill="#2a1810"/>
+    <circle cx="141" cy="40" r="2.2" fill="white"/>
+    <circle cx="199" cy="48" r="2.2" fill="white"/>
+    {/* tiny smile on body, not hammer */}
+    <Smile cx={75} cy={82} w={5} color="#2a3548"/>
+    <Blush cx={55} cy={78} color="#ff7a8a" r={4}/>
   </svg>
 );
 
 const WhaleShark = ({ size = 100 }) => (
-  <svg width={size} height={size} viewBox="0 0 240 130">
+  <svg width={size} height={size} viewBox="0 0 240 140">
     <defs>
-      <linearGradient id="ws-b" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="#5878a5"/><stop offset="55%" stopColor="#3a5478"/><stop offset="100%" stopColor="#1a2c45"/></linearGradient>
-      <linearGradient id="ws-y" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="#d0dae6"/><stop offset="100%" stopColor="#a8b4c2"/></linearGradient>
+      <linearGradient id="ws-b" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="#7898c2"/><stop offset="100%" stopColor="#3a5478"/></linearGradient>
     </defs>
-    <path d="M30 65 Q12 30 5 15 Q15 45 22 65 Q15 85 5 115 Q12 100 30 65 Z" fill="url(#ws-b)" stroke="#1a1208" strokeWidth="1.5"/>
-    <ellipse cx="135" cy="65" rx="105" ry="42" fill="url(#ws-b)" stroke="#1a1208" strokeWidth="2"/>
-    <ellipse cx="135" cy="90" rx="85" ry="18" fill="url(#ws-y)" opacity="0.85"/>
-    <path d="M115 25 L135 5 L155 25 Z" fill="url(#ws-b)" stroke="#1a1208" strokeWidth="1.5"/>
-    <path d="M70 32 L78 22 L85 32 Z" fill="url(#ws-b)" stroke="#1a1208" strokeWidth="1.5"/>
-    <path d="M165 85 Q195 110 155 115 Q145 95 155 85 Z" fill="url(#ws-b)" stroke="#1a1208" strokeWidth="1.5"/>
-    <g fill="white" opacity="0.9">
-      <circle cx="80" cy="55" r="3"/><circle cx="95" cy="45" r="2.5"/><circle cx="110" cy="58" r="3.5"/>
-      <circle cx="125" cy="48" r="2.8"/><circle cx="140" cy="55" r="3.2"/><circle cx="155" cy="42" r="2.5"/>
-      <circle cx="170" cy="58" r="3"/><circle cx="185" cy="48" r="2.8"/><circle cx="200" cy="60" r="2.5"/>
-      <circle cx="100" cy="70" r="2.5"/><circle cx="120" cy="72" r="2.8"/><circle cx="145" cy="72" r="2.5"/>
-      <circle cx="170" cy="72" r="3"/><circle cx="65" cy="48" r="2"/><circle cx="50" cy="58" r="2.2"/>
+    <ellipse cx="125" cy="130" rx="85" ry="5" fill="#000" opacity="0.12"/>
+    {/* tail */}
+    <path d="M28 70 Q10 35 5 18 Q18 50 25 70 Q18 92 5 122 Q10 105 28 70 Z" fill="url(#ws-b)" stroke={OUTLINE} strokeWidth="3" strokeLinejoin="round"/>
+    {/* big rounded body */}
+    <ellipse cx="135" cy="70" rx="105" ry="48" fill="url(#ws-b)" stroke={OUTLINE} strokeWidth="3"/>
+    {/* belly */}
+    <ellipse cx="135" cy="98" rx="80" ry="14" fill="#d8e2ee" opacity="0.85"/>
+    {/* top fin */}
+    <path d="M120 25 L138 5 L158 25 Z" fill="url(#ws-b)" stroke={OUTLINE} strokeWidth="2.5" strokeLinejoin="round"/>
+    {/* spot pattern */}
+    <g fill="white" opacity="0.85">
+      <circle cx="95" cy="55" r="3"/><circle cx="115" cy="48" r="2.5"/>
+      <circle cx="135" cy="55" r="3.2"/><circle cx="155" cy="50" r="2.8"/>
+      <circle cx="175" cy="58" r="3"/><circle cx="105" cy="75" r="2.5"/>
+      <circle cx="130" cy="78" r="2.8"/><circle cx="155" cy="75" r="2.5"/>
+      <circle cx="180" cy="80" r="2.6"/>
     </g>
-    <g stroke="white" strokeWidth="1.2" opacity="0.6">
-      <line x1="70" y1="40" x2="70" y2="80"/><line x1="100" y1="35" x2="100" y2="85"/>
-      <line x1="135" y1="32" x2="135" y2="88"/><line x1="170" y1="35" x2="170" y2="85"/>
-      <line x1="200" y1="42" x2="200" y2="80"/>
-    </g>
-    <path d="M215 65 Q240 60 240 70 Q240 72 215 72 Z" fill="#1a1208"/>
-    <circle cx="225" cy="55" r="2.5" fill="white" stroke="#1a1208" strokeWidth="1"/>
-    <circle cx="225" cy="55" r="1.5" fill="#1a1208"/>
-    <g stroke="#1a1208" strokeWidth="1" fill="none">
-      <path d="M200 50 Q202 60 200 75"/><path d="M207 50 Q209 60 207 75"/><path d="M213 50 Q215 60 213 75"/>
-    </g>
+    {/* face — at far right */}
+    <KawaiiEyes cx={215} cy={68} spacing={0} eyeSize={6}/>
+    {/* tiny smile */}
+    <Smile cx={222} cy={82} w={5} color="#2a3548"/>
+    <Blush cx={207} cy={82} color="#ff8a9a" r={4}/>
   </svg>
 );
 
 const OrcaWhale = ({ size = 100 }) => (
-  <svg width={size} height={size} viewBox="0 0 240 120">
-    <defs><linearGradient id="ow-b" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="#1a1a1a"/><stop offset="50%" stopColor="#080808"/><stop offset="100%" stopColor="#000000"/></linearGradient></defs>
-    <path d="M25 60 Q5 35 0 25 Q15 45 22 60 Q15 75 0 95 Q5 85 25 60 Z" fill="url(#ow-b)" stroke="#000" strokeWidth="1.5"/>
-    <ellipse cx="130" cy="60" rx="105" ry="35" fill="url(#ow-b)" stroke="#000" strokeWidth="1.5"/>
-    <path d="M60 75 Q130 95 200 75 Q195 88 130 92 Q65 88 60 75 Z" fill="white"/>
-    <ellipse cx="195" cy="50" rx="14" ry="8" fill="white"/>
-    <path d="M100 45 Q130 40 155 50 Q145 55 130 53 Q110 52 100 45 Z" fill="white" opacity="0.95"/>
-    <path d="M110 30 Q125 5 140 12 Q142 25 138 32 Q125 35 110 35 Z" fill="url(#ow-b)" stroke="#000" strokeWidth="1.5"/>
-    <path d="M165 75 Q195 100 158 105 Q148 85 158 75 Z" fill="url(#ow-b)" stroke="#000" strokeWidth="1.5"/>
-    <circle cx="200" cy="52" r="2" fill="#000"/>
-    <circle cx="201" cy="51" r="0.6" fill="white"/>
-    <path d="M215 65 Q230 67 235 65" stroke="#000" strokeWidth="1.5" fill="none"/>
+  <svg width={size} height={size} viewBox="0 0 240 130">
+    <defs>
+      <linearGradient id="ow-b" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="#3a3a3a"/><stop offset="100%" stopColor="#0a0a0a"/></linearGradient>
+    </defs>
+    <ellipse cx="125" cy="120" rx="80" ry="5" fill="#000" opacity="0.12"/>
+    {/* tail */}
+    <path d="M28 65 Q8 35 5 22 Q18 45 25 65 Q18 88 5 110 Q8 95 28 65 Z" fill="url(#ow-b)" stroke={OUTLINE} strokeWidth="2.5" strokeLinejoin="round"/>
+    {/* body */}
+    <ellipse cx="135" cy="65" rx="100" ry="38" fill="url(#ow-b)" stroke={OUTLINE} strokeWidth="3"/>
+    {/* white belly */}
+    <path d="M70 80 Q135 100 200 80 Q190 95 135 95 Q80 95 70 80 Z" fill="white" stroke={OUTLINE} strokeWidth="2" strokeLinejoin="round"/>
+    {/* white eye patch */}
+    <ellipse cx="200" cy="55" rx="16" ry="9" fill="white" stroke={OUTLINE} strokeWidth="2"/>
+    {/* dorsal fin */}
+    <path d="M118 30 Q135 8 148 18 Q150 30 142 38 Q128 38 118 35 Z" fill="url(#ow-b)" stroke={OUTLINE} strokeWidth="2.5" strokeLinejoin="round"/>
+    {/* eye */}
+    <circle cx="202" cy="56" r="3.5" fill="#2a1810"/>
+    <circle cx="201" cy="55" r="1.2" fill="white"/>
+    <Smile cx={215} cy={73} w={5} color="#2a1810"/>
+    <Blush cx={193} cy={70} color="#ff8a9a" r={3.5}/>
   </svg>
 );
 
 const GiantSquid = ({ size = 100 }) => (
   <svg width={size} height={size} viewBox="0 0 200 200">
-    <defs><linearGradient id="sq-b" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="#d4504a"/><stop offset="50%" stopColor="#8a2018"/><stop offset="100%" stopColor="#3a0805"/></linearGradient></defs>
-    <path d="M100 15 Q70 20 70 90 Q70 105 100 110 Q130 105 130 90 Q130 20 100 15 Z" fill="url(#sq-b)" stroke="#1a1208" strokeWidth="2"/>
-    <path d="M70 35 Q50 40 55 70 Q65 75 75 65 Z" fill="url(#sq-b)" stroke="#1a1208" strokeWidth="1.5"/>
-    <path d="M130 35 Q150 40 145 70 Q135 75 125 65 Z" fill="url(#sq-b)" stroke="#1a1208" strokeWidth="1.5"/>
-    <g fill="#5a1010" opacity="0.7">
-      <circle cx="85" cy="35" r="2"/><circle cx="100" cy="30" r="2.2"/><circle cx="115" cy="35" r="2"/>
-      <circle cx="90" cy="55" r="2.5"/><circle cx="108" cy="55" r="2.5"/><circle cx="100" cy="70" r="2"/>
-      <circle cx="82" cy="80" r="1.8"/><circle cx="118" cy="80" r="1.8"/>
+    <defs>
+      <linearGradient id="sq-b" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="#e8706a"/><stop offset="100%" stopColor="#a02828"/></linearGradient>
+    </defs>
+    <ellipse cx="100" cy="192" rx="60" ry="4" fill="#000" opacity="0.12"/>
+    {/* body — bullet shape */}
+    <path d="M100 15 Q70 18 70 95 Q70 108 100 112 Q130 108 130 95 Q130 18 100 15 Z" fill="url(#sq-b)" stroke={OUTLINE} strokeWidth="3" strokeLinejoin="round"/>
+    {/* fins on top */}
+    <path d="M70 38 Q50 42 55 72 Q66 76 75 65 Z" fill="url(#sq-b)" stroke={OUTLINE} strokeWidth="2.5" strokeLinejoin="round"/>
+    <path d="M130 38 Q150 42 145 72 Q134 76 125 65 Z" fill="url(#sq-b)" stroke={OUTLINE} strokeWidth="2.5" strokeLinejoin="round"/>
+    {/* spots */}
+    <g fill="#7a1010" opacity="0.5">
+      <circle cx="88" cy="40" r="2.5"/><circle cx="112" cy="40" r="2.5"/>
+      <circle cx="95" cy="60" r="2"/><circle cx="105" cy="60" r="2"/>
     </g>
-    <circle cx="85" cy="95" r="9" fill="white" stroke="#1a1208" strokeWidth="1.5"/>
-    <circle cx="115" cy="95" r="9" fill="white" stroke="#1a1208" strokeWidth="1.5"/>
-    <circle cx="86" cy="97" r="5.5" fill="#1a1208"/>
-    <circle cx="116" cy="97" r="5.5" fill="#1a1208"/>
-    <ellipse cx="86" cy="95" rx="2" ry="3" fill="#5a8aa0" opacity="0.6"/>
-    <ellipse cx="116" cy="95" rx="2" ry="3" fill="#5a8aa0" opacity="0.6"/>
-    <circle cx="88" cy="94" r="1.5" fill="white"/>
-    <circle cx="118" cy="94" r="1.5" fill="white"/>
-    <g fill="url(#sq-b)" stroke="#1a1208" strokeWidth="1.5">
-      <path d="M78 110 Q65 130 60 155 Q70 158 75 140 Q80 125 85 115 Z"/>
-      <path d="M90 110 Q82 135 80 165 Q88 168 90 145 Q92 125 95 115 Z"/>
-      <path d="M100 110 Q100 145 102 175 Q108 175 105 145 Q105 125 105 115 Z"/>
-      <path d="M110 110 Q118 135 120 165 Q112 168 110 145 Q108 125 105 115 Z"/>
-      <path d="M122 110 Q135 130 140 155 Q130 158 125 140 Q120 125 115 115 Z"/>
-      <path d="M70 108 Q40 140 30 180 Q38 185 42 170" strokeWidth="2"/>
-      <path d="M130 108 Q160 140 170 180 Q162 185 158 170" strokeWidth="2"/>
+    {/* tentacles */}
+    <g fill="url(#sq-b)" stroke={OUTLINE} strokeWidth="2.5" strokeLinejoin="round">
+      <path d="M78 110 Q68 135 64 158 Q72 162 76 145 Q82 125 86 115 Z"/>
+      <path d="M92 110 Q86 138 84 168 Q92 170 92 148 Q95 128 98 115 Z"/>
+      <path d="M108 110 Q114 138 116 168 Q108 170 108 148 Q105 128 102 115 Z"/>
+      <path d="M122 110 Q132 135 136 158 Q128 162 124 145 Q118 125 114 115 Z"/>
+      <path d="M70 108 Q42 138 32 175 Q40 180 45 168 Q60 138 80 115 Z" strokeWidth="2.5"/>
+      <path d="M130 108 Q158 138 168 175 Q160 180 155 168 Q140 138 120 115 Z" strokeWidth="2.5"/>
     </g>
-    <ellipse cx="35" cy="180" rx="6" ry="10" fill="url(#sq-b)" stroke="#1a1208" strokeWidth="1.5" transform="rotate(-15 35 180)"/>
-    <ellipse cx="165" cy="180" rx="6" ry="10" fill="url(#sq-b)" stroke="#1a1208" strokeWidth="1.5" transform="rotate(15 165 180)"/>
-    <ellipse cx="100" cy="108" rx="8" ry="4" fill="#5a1010"/>
+    {/* big sparkle eyes (squid have HUGE eyes) */}
+    <circle cx="83" cy="78" r="11" fill="white" stroke={OUTLINE} strokeWidth="2.5"/>
+    <circle cx="117" cy="78" r="11" fill="white" stroke={OUTLINE} strokeWidth="2.5"/>
+    <circle cx="84" cy="80" r="7" fill="#2a1810"/>
+    <circle cx="118" cy="80" r="7" fill="#2a1810"/>
+    <circle cx="82" cy="77" r="3" fill="white"/>
+    <circle cx="116" cy="77" r="3" fill="white"/>
+    <circle cx="86" cy="83" r="1.4" fill="white"/>
+    <circle cx="120" cy="83" r="1.4" fill="white"/>
+    <Blush cx={68} cy={90} color="#ff7a8a"/>
+    <Blush cx={132} cy={90} color="#ff7a8a"/>
+    <Smile cx={100} cy={102} w={5}/>
   </svg>
 );
 
 const Anglerfish = ({ size = 100 }) => (
   <svg width={size} height={size} viewBox="0 0 200 160">
     <defs>
-      <radialGradient id="af-b" cx="30%" cy="50%"><stop offset="0%" stopColor="#3a2a35"/><stop offset="60%" stopColor="#1a1018"/><stop offset="100%" stopColor="#080408"/></radialGradient>
-      <radialGradient id="af-g" cx="50%" cy="50%"><stop offset="0%" stopColor="#fff6c0"/><stop offset="40%" stopColor="#ffd060"/><stop offset="100%" stopColor="rgba(255,200,80,0)"/></radialGradient>
+      <radialGradient id="af-b" cx="40%" cy="50%"><stop offset="0%" stopColor="#4a3548"/><stop offset="100%" stopColor="#1a1018"/></radialGradient>
+      <radialGradient id="af-g" cx="50%" cy="50%"><stop offset="0%" stopColor="#fff6c0"/><stop offset="100%" stopColor="rgba(255,200,80,0)"/></radialGradient>
     </defs>
-    <path d="M30 80 Q10 60 5 45 Q12 70 18 80 Q12 95 5 115 Q10 100 30 80 Z" fill="url(#af-b)" stroke="#000" strokeWidth="1.5"/>
-    <ellipse cx="105" cy="85" rx="68" ry="50" fill="url(#af-b)" stroke="#000" strokeWidth="2"/>
-    <ellipse cx="105" cy="115" rx="50" ry="12" fill="#0a050a"/>
-    <line x1="100" y1="38" x2="85" y2="20" stroke="#2a2025" strokeWidth="2.5"/>
-    <circle cx="78" cy="15" r="14" fill="url(#af-g)" opacity="0.7"/>
-    <circle cx="78" cy="15" r="7" fill="#fff8d0" stroke="#a88030" strokeWidth="1"/>
-    <circle cx="76" cy="13" r="2" fill="white"/>
-    <path d="M145 95 Q175 85 175 105 Q170 110 155 108 Q145 105 145 95 Z" fill="#1a0510" stroke="#000" strokeWidth="2"/>
-    <g fill="white" stroke="#000" strokeWidth="0.5">
-      <path d="M148 96 L150 102 L152 96 Z"/><path d="M154 96 L156 103 L158 96 Z"/>
-      <path d="M160 95 L162 104 L164 96 Z"/><path d="M166 96 L168 103 L170 96 Z"/>
-      <path d="M150 108 L152 102 L154 108 Z"/><path d="M157 109 L159 102 L161 108 Z"/>
-      <path d="M163 108 L165 102 L167 108 Z"/>
+    <ellipse cx="100" cy="150" rx="60" ry="5" fill="#000" opacity="0.12"/>
+    {/* tail */}
+    <path d="M30 80 Q12 60 8 48 Q18 70 25 80 Q18 92 8 112 Q12 100 30 80 Z" fill="url(#af-b)" stroke={OUTLINE} strokeWidth="2.5" strokeLinejoin="round"/>
+    {/* body — round and chubby */}
+    <ellipse cx="105" cy="88" rx="62" ry="48" fill="url(#af-b)" stroke={OUTLINE} strokeWidth="3"/>
+    {/* lure */}
+    <path d="M95 42 Q85 22 75 14" stroke={OUTLINE} strokeWidth="3" fill="none" strokeLinecap="round"/>
+    <circle cx="75" cy="14" r="13" fill="url(#af-g)" opacity="0.6"/>
+    <circle cx="75" cy="14" r="7" fill="#fff8d0" stroke={OUTLINE} strokeWidth="2"/>
+    <circle cx="73" cy="12" r="2.5" fill="white"/>
+    {/* mouth — wide with little teeth */}
+    <path d="M85 100 Q105 92 145 102 Q140 112 105 110 Q88 108 85 100 Z" fill="#3a0a18" stroke={OUTLINE} strokeWidth="2.5" strokeLinejoin="round"/>
+    <g fill="white" stroke={OUTLINE} strokeWidth="0.5">
+      <path d="M92 100 L94 106 L96 100 Z"/>
+      <path d="M100 100 L102 107 L104 100 Z"/>
+      <path d="M120 100 L122 107 L124 100 Z"/>
+      <path d="M128 100 L130 107 L132 100 Z"/>
+      <path d="M96 108 L98 102 L100 108 Z"/>
+      <path d="M118 108 L120 102 L122 108 Z"/>
     </g>
-    <circle cx="135" cy="75" r="8" fill="#1a1010"/>
-    <circle cx="135" cy="75" r="6" fill="#f4d060" opacity="0.9"/>
-    <circle cx="135" cy="75" r="3" fill="#1a1010"/>
-    <circle cx="136" cy="74" r="1" fill="white"/>
-    <g stroke="#000" strokeWidth="1.5" fill="none">
-      <path d="M90 40 L95 30"/><path d="M105 38 L108 28"/><path d="M120 42 L122 32"/>
-    </g>
-    <path d="M130 50 Q145 35 155 50 Q150 55 135 55 Z" fill="url(#af-b)" stroke="#000" strokeWidth="1.5"/>
-    <circle cx="90" cy="95" r="1.5" fill="#a8e6cf" opacity="0.6"/>
-    <circle cx="110" cy="105" r="1.2" fill="#a8e6cf" opacity="0.6"/>
-    <circle cx="75" cy="80" r="1.3" fill="#a8e6cf" opacity="0.6"/>
+    {/* big eye */}
+    <circle cx="115" cy="78" r="13" fill="white" stroke={OUTLINE} strokeWidth="3"/>
+    <circle cx="116" cy="80" r="8" fill="#2a1810"/>
+    <circle cx="114" cy="77" r="3.2" fill="white"/>
+    <circle cx="118" cy="84" r="1.5" fill="white"/>
+    {/* tiny chub blush — playful contrast */}
+    <Blush cx={150} cy={92} color="#a08fc7" r={4}/>
+    <Blush cx={85} cy={85} color="#a08fc7" r={3}/>
+    {/* bioluminescent dots on body */}
+    <circle cx="95" cy="105" r="1.5" fill="#a8e6cf" opacity="0.7"/>
+    <circle cx="140" cy="80" r="1.2" fill="#a8e6cf" opacity="0.7"/>
+    <circle cx="125" cy="115" r="1.4" fill="#a8e6cf" opacity="0.7"/>
   </svg>
 );
 
 const Dolphin = ({ size = 100 }) => (
   <svg width={size} height={size} viewBox="0 0 220 130">
     <defs>
-      <linearGradient id="dl-b" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="#9ab4c8"/><stop offset="50%" stopColor="#5a7896"/><stop offset="100%" stopColor="#2a4262"/></linearGradient>
-      <linearGradient id="dl-y" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="#f0e8d8"/><stop offset="100%" stopColor="#c8c0a8"/></linearGradient>
+      <linearGradient id="dl-b" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="#a8c0d4"/><stop offset="100%" stopColor="#5a7896"/></linearGradient>
     </defs>
-    <path d="M25 60 Q5 40 0 30 Q12 50 18 65 Q10 80 0 95 Q8 85 25 65 Z" fill="url(#dl-b)" stroke="#1a1208" strokeWidth="1.5"/>
-    <path d="M30 65 Q50 38 130 38 Q180 40 200 60 Q205 65 200 70 L185 72 Q165 75 130 78 Q60 82 30 70 Z" fill="url(#dl-b)" stroke="#1a1208" strokeWidth="2"/>
-    <path d="M50 72 Q120 90 195 70 Q120 95 50 72 Z" fill="url(#dl-y)" opacity="0.9"/>
-    <path d="M200 60 Q215 55 220 62 Q218 68 205 68 Z" fill="url(#dl-b)" stroke="#1a1208" strokeWidth="1.5"/>
-    <ellipse cx="212" cy="64" rx="3" ry="2" fill="#1a1208"/>
-    <path d="M85 38 Q95 18 105 38 Z" fill="url(#dl-b)" stroke="#1a1208" strokeWidth="1.5"/>
-    <path d="M105 72 Q130 95 90 100 Q85 80 95 72 Z" fill="url(#dl-b)" stroke="#1a1208" strokeWidth="1.5"/>
-    <circle cx="190" cy="55" r="2.5" fill="#1a1208"/>
-    <circle cx="190" cy="55" r="0.8" fill="white"/>
-    <path d="M170 55 Q172 60 170 65" stroke="#1a1208" strokeWidth="0.8" fill="none" opacity="0.5"/>
+    <ellipse cx="110" cy="122" rx="80" ry="5" fill="#000" opacity="0.12"/>
+    {/* tail */}
+    <path d="M28 60 Q8 38 5 25 Q18 48 25 62 Q18 78 5 98 Q8 88 28 65 Z" fill="url(#dl-b)" stroke={OUTLINE} strokeWidth="2.5" strokeLinejoin="round"/>
+    {/* body — rounded and chubby */}
+    <path d="M30 60 Q45 32 130 32 Q180 35 200 60 Q205 68 198 75 L180 78 Q160 80 130 82 Q60 82 30 70 Z" fill="url(#dl-b)" stroke={OUTLINE} strokeWidth="3" strokeLinejoin="round"/>
+    {/* belly */}
+    <path d="M55 75 Q130 92 195 75 Q130 88 55 75 Z" fill="#f4e8d0" opacity="0.9"/>
+    {/* beak — rounded */}
+    <path d="M198 60 Q218 58 218 68 Q215 73 200 72 Z" fill="url(#dl-b)" stroke={OUTLINE} strokeWidth="2.5" strokeLinejoin="round"/>
+    {/* dorsal fin */}
+    <path d="M85 32 Q98 12 110 32 Z" fill="url(#dl-b)" stroke={OUTLINE} strokeWidth="2.5" strokeLinejoin="round"/>
+    {/* belly fin */}
+    <path d="M108 78 Q128 95 95 100 Q90 85 100 78 Z" fill="url(#dl-b)" stroke={OUTLINE} strokeWidth="2.5" strokeLinejoin="round"/>
+    {/* face */}
+    <circle cx="188" cy="55" r="6" fill="white" stroke={OUTLINE} strokeWidth="2.5"/>
+    <circle cx="188" cy="55" r="3.5" fill="#2a1810"/>
+    <circle cx="186" cy="53" r="1.5" fill="white"/>
+    <Smile cx={210} cy={68} w={4} color="#2a1810"/>
+    <Blush cx={195} cy={70} color="#ff8a9a" r={3.5}/>
   </svg>
 );
 
 const SwordFish = ({ size = 100 }) => (
-  <svg width={size} height={size} viewBox="0 0 240 110">
+  <svg width={size} height={size} viewBox="0 0 240 120">
     <defs>
-      <linearGradient id="sw-b" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="#4a6a8c"/><stop offset="50%" stopColor="#28405a"/><stop offset="100%" stopColor="#0a1a30"/></linearGradient>
+      <linearGradient id="sw-b" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="#6a8aac"/><stop offset="100%" stopColor="#28405a"/></linearGradient>
     </defs>
-    <path d="M25 55 Q5 30 0 18 Q10 40 18 55 Q10 70 0 92 Q5 80 25 55 Z" fill="url(#sw-b)" stroke="#1a1208" strokeWidth="1.5"/>
-    <ellipse cx="110" cy="55" rx="90" ry="22" fill="url(#sw-b)" stroke="#1a1208" strokeWidth="2"/>
-    <path d="M70 38 Q90 18 105 38 Z" fill="url(#sw-b)" stroke="#1a1208" strokeWidth="1.5"/>
-    <path d="M120 72 Q140 92 105 95 Q100 80 110 72 Z" fill="url(#sw-b)" stroke="#1a1208" strokeWidth="1.5"/>
-    <path d="M200 55 L240 50 L240 60 Z" fill="#cab68a" stroke="#1a1208" strokeWidth="1.5"/>
-    <ellipse cx="195" cy="50" rx="3" ry="2.5" fill="#1a1208"/>
-    <circle cx="196" cy="49" r="0.8" fill="white"/>
-    <path d="M40 65 Q110 75 195 65" stroke="white" strokeWidth="1" fill="none" opacity="0.4"/>
+    <ellipse cx="120" cy="112" rx="80" ry="5" fill="#000" opacity="0.12"/>
+    {/* tail */}
+    <path d="M28 58 Q8 32 5 18 Q18 42 25 58 Q18 72 5 92 Q8 80 28 60 Z" fill="url(#sw-b)" stroke={OUTLINE} strokeWidth="2.5" strokeLinejoin="round"/>
+    {/* body */}
+    <ellipse cx="115" cy="60" rx="85" ry="25" fill="url(#sw-b)" stroke={OUTLINE} strokeWidth="3"/>
+    {/* belly */}
+    <ellipse cx="115" cy="72" rx="70" ry="10" fill="#a8b8cc" opacity="0.6"/>
+    {/* top fin */}
+    <path d="M75 42 Q92 22 108 42 Z" fill="url(#sw-b)" stroke={OUTLINE} strokeWidth="2.5" strokeLinejoin="round"/>
+    {/* bottom fin */}
+    <path d="M118 80 Q138 100 105 100 Q100 88 110 80 Z" fill="url(#sw-b)" stroke={OUTLINE} strokeWidth="2.5" strokeLinejoin="round"/>
+    {/* sword */}
+    <path d="M198 58 L238 55 L238 65 L198 62 Z" fill="#d4c098" stroke={OUTLINE} strokeWidth="2.5" strokeLinejoin="round"/>
+    {/* eye */}
+    <circle cx="188" cy="54" r="6" fill="white" stroke={OUTLINE} strokeWidth="2.5"/>
+    <circle cx="188" cy="54" r="3.5" fill="#2a1810"/>
+    <circle cx="186" cy="52" r="1.5" fill="white"/>
+    <Blush cx={175} cy={68} color="#ff8a9a" r={4}/>
+    <Smile cx={195} cy={70} w={4} color="#2a1810"/>
   </svg>
 );
+
 
 // ═══════════════════════════════════════════════════════════
 // CREATURE REGISTRY
@@ -502,7 +609,7 @@ const JOURNEY = [
     bg: ["#7ec8e3", "#5aafd0"], textColor: "#0a3a5a",
     desc: "Where sunlight dances on the surface and coral begins to bloom.",
     creatures: [
-      { id: "clownfish", name: "Clownfish", rarity: "Common", fact: "Lives in symbiotic harmony with anemones, immune to their stinging tentacles." },
+      { id: "clownfish", name: "Goldfish", rarity: "Common", fact: "One of the first fish domesticated by humans over 1,000 years ago in China. Can live for over 40 years." },
       { id: "seahorse", name: "Seahorse", rarity: "Common", fact: "The only known animal where males carry the babies and give birth." },
     ]
   },
@@ -1896,12 +2003,18 @@ const DailyDiveView = ({ onClose, onDiveComplete, stage }) => {
           <div style={{ padding: "12px 20px", background: "rgba(0,0,0,0.2)", borderRadius: 14, marginBottom: 18, backdropFilter: "blur(6px)" }}>
             <div style={{ ...font(12, 700), color: "#fff", opacity: 0.85, marginBottom: 8, letterSpacing: 1, textTransform: "uppercase" }}>Complete the dive to unlock</div>
             <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-              {stage.creatures.map(c => (
+              {stage.creatures.map((c, i) => (
                 <div key={c.id} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <div style={{ background: "rgba(255,255,255,0.15)", borderRadius: 12, padding: 4, filter: "brightness(0.4) contrast(1.2)" }}>
-                    {renderCreature(c.id, 56)}
+                  <div style={{
+                    width: 64, height: 64, borderRadius: 12,
+                    background: "rgba(255,255,255,0.08)",
+                    border: "2px dashed rgba(255,255,255,0.35)",
+                    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2,
+                  }}>
+                    <div style={{ fontSize: 22 }}>🔒</div>
+                    <div style={{ ...displayFont(16), color: "rgba(255,255,255,0.7)" }}>?</div>
                   </div>
-                  <div style={{ ...font(10, 600), color: "#fff", opacity: 0.7, marginTop: 4 }}>???</div>
+                  <div style={{ ...font(10, 700), color: "#fff", opacity: 0.7, marginTop: 4, letterSpacing: 1 }}>UNKNOWN</div>
                 </div>
               ))}
             </div>
@@ -2015,8 +2128,13 @@ const JourneyTab = ({ profile, onStartDive }) => {
       }}>
         <Bubbles count={8} opacity={0.3} />
         <Caustics />
-        <SwimmingCreature creature={currentStage.creatures[0]?.id || "clownfish"} top={20} side="left" duration={22} scale={0.6} flip={false} />
-        <SwimmingCreature creature={currentStage.creatures[1]?.id || "seahorse"} top={120} side="right" duration={28} delay={4} scale={0.5} flip={true} />
+        {/* Show swimming silhouettes ONLY of already-collected creatures to avoid spoiling */}
+        {profile.collectedCreatures[0] && (
+          <SwimmingCreature creature={profile.collectedCreatures[0]} top={20} side="left" duration={22} scale={0.6} flip={false} />
+        )}
+        {profile.collectedCreatures[1] && (
+          <SwimmingCreature creature={profile.collectedCreatures[1]} top={120} side="right" duration={28} delay={4} scale={0.5} flip={true} />
+        )}
         <div style={{ position: "relative", zIndex: 2 }}>
           <div style={{ ...font(11, 700), color: currentStage.textColor, letterSpacing: 2, textTransform: "uppercase", opacity: 0.85 }}>
             Current Depth · {currentStage.depth}
@@ -2097,12 +2215,13 @@ const JourneyTab = ({ profile, onStartDive }) => {
                           return (
                             <div key={c.id} style={{
                               width: 44, height: 44, borderRadius: 10,
-                              background: collected ? `${RARITY_COLORS[c.rarity]}22` : "rgba(20,40,70,0.08)",
-                              border: collected ? `1.5px solid ${RARITY_COLORS[c.rarity]}66` : `1px solid rgba(20,40,70,0.1)`,
+                              background: collected ? `${RARITY_COLORS[c.rarity]}22` : "rgba(20,40,70,0.06)",
+                              border: collected ? `1.5px solid ${RARITY_COLORS[c.rarity]}66` : `1.5px dashed rgba(20,40,70,0.18)`,
                               display: "flex", alignItems: "center", justifyContent: "center",
-                              filter: collected ? "none" : "grayscale(100%) opacity(0.35)",
                             }}>
-                              {renderCreature(c.id, 38)}
+                              {collected ? renderCreature(c.id, 38) : (
+                                <span style={{ ...displayFont(20), color: C.slate, opacity: 0.5 }}>?</span>
+                              )}
                             </div>
                           );
                         })}
@@ -2185,9 +2304,16 @@ const CollectionTab = ({ profile }) => {
                 >
                   <div style={{
                     height: 80, display: "flex", alignItems: "center", justifyContent: "center",
-                    filter: isCollected ? "none" : "grayscale(100%) opacity(0.3)",
+                    background: isCollected ? "transparent" : "rgba(20,40,70,0.04)",
+                    border: isCollected ? "none" : "2px dashed rgba(20,40,70,0.15)",
+                    borderRadius: 12,
                   }}>
-                    {renderCreature(c.id, 80)}
+                    {isCollected ? renderCreature(c.id, 80) : (
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                        <div style={{ fontSize: 28, opacity: 0.3 }}>🔒</div>
+                        <div style={{ ...displayFont(22), color: C.slate, opacity: 0.5 }}>?</div>
+                      </div>
+                    )}
                   </div>
                   <div style={{ ...font(13, 700), color: isCollected ? C.deepNavy : C.slate, marginTop: 6 }}>
                     {isCollected ? c.name : "???"}
