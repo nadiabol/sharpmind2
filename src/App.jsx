@@ -690,22 +690,36 @@ const SwimmingCreature = ({ creature, top, side = "left", duration = 30, delay =
 // ═══════════════════════════════════════════════════════════
 // GAME REGISTRY
 // ═══════════════════════════════════════════════════════════
+// Games are grounded in validated executive function paradigms:
+//  - Stroop Showdown: response inhibition (Stroop, 1935)
+//  - Mind Bridge: planning (Tower of London / Hanoi, Shallice 1982)
+//  - Rule Shift: cognitive flexibility / set-shifting (WCST, Berg 1948)
+//  - Dual N-Back: working memory updating (Kirchner 1958; Jaeggi 2008)
+//  - Pattern Recall: visuospatial working memory (Corsi block-tapping)
+//  - Focus Grid: selective attention (visual search)
+//  - Number Flow: fluid reasoning
+//  - Word Maze: verbal fluency
 const GAMES = [
-  { id: "pattern", name: "Pattern Recall", icon: "🧩", color: C.aqua, skill: "Memory", desc: "Memorize and repeat tile patterns", difficulty: "Medium" },
-  { id: "number", name: "Number Flow", icon: "🔢", color: C.gold, skill: "Logic", desc: "Solve sequences and equations fast", difficulty: "Medium" },
+  { id: "pattern", name: "Pattern Recall", icon: "🧩", color: C.aqua, skill: "Working Memory", desc: "Memorize and repeat tile sequences", difficulty: "Medium" },
+  { id: "number", name: "Number Flow", icon: "🔢", color: C.gold, skill: "Fluid Reasoning", desc: "Spot patterns and solve under pressure", difficulty: "Medium" },
   { id: "focus", name: "Focus Grid", icon: "🎯", color: "#a08fc7", skill: "Attention", desc: "Find targets in a visual field", difficulty: "Easy" },
-  { id: "decision", name: "Decision Lab", icon: "⚖️", color: C.seagrass, skill: "Judgment", desc: "Navigate executive scenarios", difficulty: "Hard" },
-  { id: "wordmaze", name: "Word Maze", icon: "🔤", color: C.coral, skill: "Creativity", desc: "Build word chains from connections", difficulty: "Medium" },
-  { id: "priority", name: "Priority Matrix", icon: "📋", color: "#e4925a", skill: "Planning", desc: "Sort tasks by urgency and impact", difficulty: "Hard" },
+  { id: "stroop", name: "Stroop Showdown", icon: "🎨", color: C.seagrass, skill: "Inhibition", desc: "Override the automatic response — tap the ink color, not the word", difficulty: "Hard" },
+  { id: "wordmaze", name: "Word Maze", icon: "🔤", color: C.coral, skill: "Verbal Fluency", desc: "Build word chains from connections", difficulty: "Medium" },
+  { id: "bridge", name: "Mind Bridge", icon: "🗼", color: "#e4925a", skill: "Planning", desc: "Move discs to the goal in minimum steps", difficulty: "Hard" },
   { id: "dualn", name: "Dual N-Back", icon: "🔁", color: C.shallow, skill: "Working Memory", desc: "Track two streams simultaneously", difficulty: "Hard" },
-  { id: "speedsort", name: "Speed Sort", icon: "⚡", color: "#e8c75c", skill: "Flexibility", desc: "Categorize rapidly under pressure", difficulty: "Easy" },
+  { id: "ruleshift", name: "Rule Shift", icon: "🔀", color: "#e8c75c", skill: "Flexibility", desc: "Discover the hidden rule — then adapt when it changes", difficulty: "Hard" },
 ];
 
+// Skills tracked, aligned with Diamond (2013) core executive function components
+// and the higher-order functions built from them.
 const SKILLS = [
-  { name: "Memory", color: C.aqua }, { name: "Logic", color: C.gold },
-  { name: "Attention", color: "#a08fc7" }, { name: "Judgment", color: C.seagrass },
-  { name: "Creativity", color: C.coral }, { name: "Planning", color: "#e4925a" },
+  { name: "Inhibition", color: C.seagrass },
+  { name: "Working Memory", color: C.aqua },
   { name: "Flexibility", color: "#e8c75c" },
+  { name: "Attention", color: "#a08fc7" },
+  { name: "Planning", color: "#e4925a" },
+  { name: "Fluid Reasoning", color: C.gold },
+  { name: "Verbal Fluency", color: C.coral },
 ];
 
 // ═══════════════════════════════════════════════════════════
@@ -718,7 +732,7 @@ const makeProfile = (name = "Alex") => ({
   firstName: name, totalXP: 0, currentLevel: 1,
   currentStreak: 0, longestStreak: 0,
   avatarTitle: TITLES_BY_STAGE[0],
-  skillScores: { Memory: 5, Logic: 5, Attention: 5, Judgment: 5, Creativity: 5, Planning: 5, Flexibility: 5 },
+  skillScores: { "Inhibition": 5, "Working Memory": 5, "Flexibility": 5, "Attention": 5, "Planning": 5, "Fluid Reasoning": 5, "Verbal Fluency": 5 },
   gameHistory: GAMES.map(g => ({ id: g.id, bestScore: 0, timesPlayed: 0, lastScore: 0 })),
   weekScores: ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(d => ({ day: d, score: 0 })),
   currentStage: 1,
@@ -739,7 +753,7 @@ const makeDemoProfile = (name = "Alex") => ({
   totalXP: 1850, currentLevel: 4,
   currentStreak: 8, longestStreak: 12,
   avatarTitle: TITLES_BY_STAGE[3],
-  skillScores: { Memory: 7, Logic: 6, Attention: 8, Judgment: 7, Creativity: 6, Planning: 5, Flexibility: 6 },
+  skillScores: { "Inhibition": 7, "Working Memory": 8, "Flexibility": 6, "Attention": 8, "Planning": 5, "Fluid Reasoning": 6, "Verbal Fluency": 7 },
   gameHistory: GAMES.map(g => ({
     id: g.id, bestScore: Math.floor(Math.random() * 100 + 80),
     timesPlayed: Math.floor(Math.random() * 10 + 3),
@@ -781,7 +795,7 @@ const OnboardingView = ({ onComplete }) => {
       <div style={{ ...displayFont(42), color: "#fff", opacity: animIn ? 1 : 0, transition: "opacity 0.6s 0.2s" }}>SharpMind</div>
       <div style={{ ...font(15, 700), color: C.aqua, marginTop: 6, opacity: animIn ? 1 : 0, transition: "opacity 0.6s 0.3s", letterSpacing: 3, textTransform: "uppercase" }}>Ocean Journey</div>
       <p style={{ ...font(17), color: "rgba(255,255,255,0.78)", marginTop: 18, maxWidth: 340, opacity: animIn ? 1 : 0, transition: "opacity 0.6s 0.4s" }}>
-        Train your mind through 8 cognitive games. Complete daily dives to descend deeper and discover {TOTAL_CREATURES} exotic sea creatures.
+        Train the brain's management system. {GAMES.length} games grounded in neuroscience. Complete daily dives to descend deeper and discover {TOTAL_CREATURES} exotic sea creatures.
       </p>
       <div style={{ flex: 1 }} />
       <Btn onClick={() => setPage(1)} style={{ opacity: animIn ? 1 : 0, transition: "opacity 0.6s 0.5s" }}>Begin the Journey 🌊</Btn>
@@ -791,7 +805,7 @@ const OnboardingView = ({ onComplete }) => {
       <div style={{ ...displayFont(28), color: "#fff", marginBottom: 24 }}>What should we call you, diver?</div>
       <input value={name} onChange={e => setName(e.target.value)} placeholder="Your first name"
         style={{ ...font(20, 600), color: "#fff", background: "rgba(255,255,255,0.1)", border: "none", borderRadius: 14, padding: "14px 20px", textAlign: "center", width: "80%", outline: "none" }} />
-      <p style={{ ...font(14, 500), color: "rgba(255,255,255,0.5)", marginTop: 12, maxWidth: 300 }}>We'll guide your descent based on your performance.</p>
+      <p style={{ ...font(14, 500), color: "rgba(255,255,255,0.5)", marginTop: 12, maxWidth: 300 }}>We'll track your progress across all seven executive function skills.</p>
       <div style={{ flex: 1 }} />
       <Btn onClick={() => setPage(2)} disabled={!name.trim()}>Continue</Btn>
     </div>,
@@ -830,12 +844,13 @@ const OnboardingView = ({ onComplete }) => {
 };
 
 // ═══════════════════════════════════════════════════════════
-// GAMES — preserved logic, ocean theme colors
+// GAMES
+// All games target validated executive function paradigms.
 // ═══════════════════════════════════════════════════════════
 const GameChrome = ({ name, icon, color, round, totalRounds, score, timeLeft, maxTime, children, subtitle }) => (
   <div style={{ padding: 20, display: "flex", flexDirection: "column", alignItems: "center", height: "100%" }}>
     <div style={{ ...displayFont(22), color: "#fff", marginBottom: 2 }}>{icon} {name}</div>
-    {subtitle && <div style={{ ...font(14, 500), color: `${color}cc`, marginBottom: 8 }}>{subtitle}</div>}
+    {subtitle && <div style={{ ...font(14, 500), color: `${color}cc`, marginBottom: 8, textAlign: "center" }}>{subtitle}</div>}
     <div style={{ display: "flex", gap: 16, width: "100%", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
       <span style={{ ...mono(13), color: "rgba(255,255,255,0.7)" }}>R{round}/{totalRounds}</span>
       {maxTime > 0 && (
@@ -849,6 +864,10 @@ const GameChrome = ({ name, icon, color, round, totalRounds, score, timeLeft, ma
   </div>
 );
 
+// ───────────────────────────────────────────────────────────
+// PATTERN RECALL — Corsi block-tapping paradigm.
+// Visuospatial working memory.
+// ───────────────────────────────────────────────────────────
 const PatternRecallGame = ({ onComplete }) => {
   const [phase, setPhase] = useState("countdown");
   const [countdown, setCountdown] = useState(3);
@@ -933,6 +952,9 @@ const PatternRecallGame = ({ onComplete }) => {
   );
 };
 
+// ───────────────────────────────────────────────────────────
+// NUMBER FLOW — fluid reasoning under time pressure.
+// ───────────────────────────────────────────────────────────
 const NumberFlowGame = ({ onComplete }) => {
   const [round, setRound] = useState(0);
   const [score, setScore] = useState(0);
@@ -986,6 +1008,9 @@ const NumberFlowGame = ({ onComplete }) => {
   );
 };
 
+// ───────────────────────────────────────────────────────────
+// FOCUS GRID — selective attention / visual search.
+// ───────────────────────────────────────────────────────────
 const FocusGridGame = ({ onComplete }) => {
   const symSets = [{ target: "★", dist: ["●","▲","■","◆"] }, { target: "♥", dist: ["♠","♣","◆","●"] }, { target: "☾", dist: ["☀","☁","★","✦"] }];
   const [round, setRound] = useState(0);
@@ -1036,58 +1061,114 @@ const FocusGridGame = ({ onComplete }) => {
   );
 };
 
-const DecisionLabGame = ({ onComplete }) => {
-  const allS = [
-    { cat: "Leadership", sit: "Your team member made a major error on a client deliverable. The client hasn't noticed yet.", choices: ["Immediately tell the client and offer a fix", "Quietly fix it and send an 'updated version'", "Wait to see if the client notices", "Document the incident for review"], best: 0, why: "Proactive transparency builds trust. Clients respect honesty far more than perfection." },
-    { cat: "Risk Assessment", sit: "Option A: guaranteed 8% return. Option B: 60% chance of 25%, 40% chance of -10%. This is 30% of your capital.", choices: ["Option A — guaranteed return", "Option B — higher expected value", "Split evenly between both", "Need more information"], best: 2, why: "Diversification reduces risk while capturing upside — almost always optimal." },
-    { cat: "Time Management", sit: "3 tasks due today: board presentation (3hrs), routine report (1hr), urgent emails (30min). 3 hours left.", choices: ["Board presentation first", "Emails, report, then presentation", "Delegate report, skip email, focus presentation", "Report first for a quick win"], best: 2, why: "Focus irreplaceable expertise on the highest-impact task. Delegate what others can do." },
-    { cat: "Emotional IQ", sit: "A colleague publicly criticizes your project. The criticism has valid points but delivery was inappropriate.", choices: ["Thank them, discuss privately later", "Defend your decision point by point", "Redirect to agenda, address privately", "Acknowledge valid points, note private feedback pref"], best: 3, why: "Acknowledging valid points shows security. Setting the boundary models professionalism." },
-    { cat: "Strategic Thinking", sit: "Your industry is being disrupted by AI. Your skills are valuable now but may not be in 5 years.", choices: ["Double down on current expertise", "Learn AI tools to augment your skills", "Pivot to an AI-resistant field", "Focus on leadership and human skills"], best: 1, why: "AI augmentation of existing expertise is highest-leverage — domain knowledge plus AI multipliers." },
+// ───────────────────────────────────────────────────────────
+// STROOP SHOWDOWN — response inhibition (Stroop, 1935).
+// Tap the INK COLOR of the word, ignoring what the word says.
+// Trains the prefrontal cortex to override prepotent reading
+// responses. This is the gold-standard inhibition paradigm.
+// ───────────────────────────────────────────────────────────
+const StroopGame = ({ onComplete }) => {
+  const COLORS = [
+    { name: "RED",    hex: "#ff6b6b" },
+    { name: "BLUE",   hex: "#5a9ee0" },
+    { name: "GREEN",  hex: "#5ed3a3" },
+    { name: "YELLOW", hex: "#f4c763" },
   ];
-  const [scenarios] = useState(() => [...allS].sort(() => Math.random() - 0.5));
+  const TOTAL = 18;
   const [round, setRound] = useState(0);
-  const [selected, setSelected] = useState(null);
   const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(20);
-  const timerRef = useRef(null);
-  const labels = ["A","B","C","D"];
+  const [trials] = useState(() => Array.from({ length: TOTAL }, (_, i) => {
+    // Mix congruent and incongruent (~70% incongruent for training value)
+    const wordIdx = Math.floor(Math.random() * COLORS.length);
+    let inkIdx;
+    if (i < 3 || Math.random() < 0.3) inkIdx = wordIdx; // some congruent
+    else { do { inkIdx = Math.floor(Math.random() * COLORS.length); } while (inkIdx === wordIdx); }
+    return { wordIdx, inkIdx };
+  }));
+  const [reactionStart, setReactionStart] = useState(Date.now());
+  const [feedback, setFeedback] = useState(null); // 'correct' | 'wrong' | null
+  const [locked, setLocked] = useState(false);
 
-  useEffect(() => {
-    setTimeLeft(20); setSelected(null); clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => setTimeLeft(t => { if (t <= 1) { clearInterval(timerRef.current); return 0; } return t - 1; }), 1000);
-    return () => clearInterval(timerRef.current);
-  }, [round]);
+  useEffect(() => { setReactionStart(Date.now()); setFeedback(null); setLocked(false); }, [round]);
 
-  const pick = (i) => { if (selected !== null) return; clearInterval(timerRef.current); setSelected(i); setScore(s => s + (i === scenarios[round].best ? 20 + timeLeft * 2 : 5)); };
-  const s = scenarios[round];
+  if (round >= TOTAL) return null;
+  const trial = trials[round];
+  const isCongruent = trial.wordIdx === trial.inkIdx;
+
+  const pick = (i) => {
+    if (locked) return;
+    setLocked(true);
+    const rt = Date.now() - reactionStart;
+    const correct = i === trial.inkIdx;
+    let pts = 0;
+    if (correct) {
+      // Speed bonus (faster than 2s = full bonus); incongruent worth more
+      const speedBonus = Math.max(0, Math.round(20 - rt / 100));
+      pts = 10 + speedBonus + (isCongruent ? 0 : 8);
+    } else {
+      pts = -5;
+    }
+    setScore(s => Math.max(0, s + pts));
+    setFeedback(correct ? "correct" : "wrong");
+    setTimeout(() => {
+      if (round + 1 >= TOTAL) onComplete(score + pts);
+      else setRound(r => r + 1);
+    }, 600);
+  };
 
   return (
-    <GameChrome name="Decision Lab" icon="⚖️" color={C.seagrass} round={round + 1} totalRounds={5} score={score} timeLeft={timeLeft} maxTime={20} subtitle="Choose the best executive move">
-      <div style={{ padding: 14, background: "rgba(255,255,255,0.06)", borderRadius: 14, marginBottom: 14 }}>
-        <span style={{ ...font(11, 600), color: C.seagrass, textTransform: "uppercase", letterSpacing: 1, padding: "3px 10px", background: `${C.seagrass}26`, borderRadius: 12, display: "inline-block", marginBottom: 8 }}>{s.cat}</span>
-        <div style={{ ...font(15), color: "#fff", lineHeight: 1.5 }}>{s.sit}</div>
+    <GameChrome name="Stroop Showdown" icon="🎨" color={C.seagrass} round={round + 1} totalRounds={TOTAL} score={score} timeLeft={0} maxTime={0}
+      subtitle="Tap the INK COLOR — ignore what the word says">
+      <div style={{
+        padding: "44px 24px", borderRadius: 20, marginBottom: 24,
+        background: feedback === "correct" ? `${C.success}1a` : feedback === "wrong" ? `${C.coral}1a` : "rgba(255,255,255,0.06)",
+        border: `2px solid ${feedback === "correct" ? C.success : feedback === "wrong" ? C.coral : "rgba(255,255,255,0.1)"}`,
+        textAlign: "center", transition: "all 0.15s",
+      }}>
+        <div style={{
+          fontFamily: "'Outfit', system-ui, sans-serif",
+          fontSize: 56, fontWeight: 800, letterSpacing: 2,
+          color: COLORS[trial.inkIdx].hex,
+          textShadow: "0 2px 8px rgba(0,0,0,0.25)",
+        }}>
+          {COLORS[trial.wordIdx].name}
+        </div>
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {s.choices.map((c, i) => {
-          const isB = selected !== null && i === s.best, isW = selected === i && i !== s.best;
-          return (
-            <div key={i} onClick={() => pick(i)} style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: 12, borderRadius: 12, cursor: selected ? "default" : "pointer", background: isB ? `${C.success}1f` : isW ? `${C.coral}14` : "rgba(255,255,255,0.04)", border: `2px solid ${isB ? `${C.success}66` : "transparent"}`, transition: "all 0.3s" }}>
-              <div style={{ width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, ...mono(14), color: isB ? C.deepNavy : "#fff", background: isB ? C.success : "rgba(255,255,255,0.1)" }}>{labels[i]}</div>
-              <div style={{ ...font(14), color: isB ? "#fff" : selected !== null ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.85)", lineHeight: 1.4 }}>{c}</div>
-            </div>
-          );
-        })}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        {COLORS.map((c, i) => (
+          <div key={c.name} onClick={() => pick(i)} style={{
+            padding: "18px 12px", borderRadius: 14, textAlign: "center",
+            cursor: locked ? "default" : "pointer",
+            background: `${c.hex}22`,
+            border: `2px solid ${c.hex}88`,
+            ...font(17, 700), color: "#fff",
+            transition: "transform 0.1s, background 0.2s",
+          }}
+            onMouseDown={e => !locked && (e.currentTarget.style.transform = "scale(0.96)")}
+            onMouseUp={e => (e.currentTarget.style.transform = "scale(1)")}
+            onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+          >
+            <div style={{ width: 28, height: 28, borderRadius: "50%", background: c.hex, margin: "0 auto 6px" }} />
+            {c.name}
+          </div>
+        ))}
       </div>
-      {selected !== null && (
-        <div style={{ padding: 12, background: `${C.gold}14`, borderRadius: 12, marginTop: 12 }}>
-          <div style={{ ...font(14, 600), color: C.gold, marginBottom: 4 }}>💡 {s.why}</div>
-          <Btn onClick={() => { if (round < 4) setRound(r => r + 1); else onComplete(score); }} style={{ marginTop: 8, padding: "10px 24px" }}>{round < 4 ? "Next Scenario" : "Finish"}</Btn>
+      {feedback && (
+        <div style={{ ...font(14, 600), color: feedback === "correct" ? C.success : C.coral, textAlign: "center", marginTop: 14 }}>
+          {feedback === "correct" ? (isCongruent ? "✓" : "✓ Inhibited!") : `✗ The ink was ${COLORS[trial.inkIdx].name}`}
         </div>
       )}
+      <div style={{ ...font(11, 500), color: "rgba(255,255,255,0.35)", textAlign: "center", marginTop: 18, lineHeight: 1.4 }}>
+        Inhibiting an automatic response trains the prefrontal cortex.<br/>
+        Incongruent trials are worth more points.
+      </div>
     </GameChrome>
   );
 };
 
+// ───────────────────────────────────────────────────────────
+// WORD MAZE — verbal fluency / lexical connections.
+// ───────────────────────────────────────────────────────────
 const WordMazeGame = ({ onComplete }) => {
   const chains = [
     { start: "FIRE", end: "WATER", words: ["FIRE","FLAME","HEAT","STEAM","WATER"], decoys: ["SMOKE","COLD","BURN"] },
@@ -1142,66 +1223,158 @@ const WordMazeGame = ({ onComplete }) => {
   );
 };
 
-const PriorityMatrixGame = ({ onComplete }) => {
-  const rounds = [
-    { items: [
-      { task: "Server is down — clients can't log in", urgent: true, important: true },
-      { task: "Reply to a 'thanks for the meeting' email", urgent: false, important: false },
-      { task: "Plan next quarter's strategic roadmap", urgent: false, important: true },
-      { task: "Coworker asks for help with their report", urgent: true, important: false },
-    ]},
-    { items: [
-      { task: "Investor pitch in 2 hours — not ready", urgent: true, important: true },
-      { task: "Update LinkedIn profile picture", urgent: false, important: false },
-      { task: "Review long-term hiring plan", urgent: false, important: true },
-      { task: "Office snack supply needs reorder", urgent: true, important: false },
-    ]},
+// ───────────────────────────────────────────────────────────
+// MIND BRIDGE — Tower of Hanoi paradigm (Shallice 1982).
+// Goal-directed planning. Move discs between three pegs
+// (largest on bottom rule) to match the goal in min moves.
+// ───────────────────────────────────────────────────────────
+const MindBridgeGame = ({ onComplete }) => {
+  // Three increasingly hard puzzles (3, 3, 4 discs)
+  const PUZZLES = [
+    { discs: 3, start: [[3, 2, 1], [], []], goal: [[], [], [3, 2, 1]], minMoves: 7 },
+    { discs: 3, start: [[3, 2, 1], [], []], goal: [[], [3, 2, 1], []], minMoves: 7 },
+    { discs: 4, start: [[4, 3, 2, 1], [], []], goal: [[], [], [4, 3, 2, 1]], minMoves: 15 },
   ];
-  const [round, setRound] = useState(0);
-  const [ci, setCi] = useState(0);
+  const DISC_COLORS = [C.aqua, C.gold, C.coral, "#a08fc7", "#e4925a"];
+  const [puzzleIdx, setPuzzleIdx] = useState(0);
+  const [pegs, setPegs] = useState(JSON.parse(JSON.stringify(PUZZLES[0].start)));
+  const [selectedPeg, setSelectedPeg] = useState(null);
+  const [moves, setMoves] = useState(0);
   const [score, setScore] = useState(0);
-  const [lastResult, setLastResult] = useState(null);
+  const [phase, setPhase] = useState("playing"); // 'playing' | 'solved'
 
-  const handlePick = (urgent, important) => {
-    const item = rounds[round].items[ci];
-    const correct = item.urgent === urgent && item.important === important;
-    setScore(s => Math.max(0, s + (correct ? 25 : -5)));
-    setLastResult(correct ? "correct" : "wrong"); setTimeout(() => setLastResult(null), 300);
-    if (ci + 1 >= rounds[round].items.length) {
-      if (round + 1 < rounds.length) { setRound(r => r + 1); setCi(0); }
-      else setTimeout(() => onComplete(score + (correct ? 25 : 0)), 500);
-    } else setCi(c => c + 1);
+  useEffect(() => {
+    setPegs(JSON.parse(JSON.stringify(PUZZLES[puzzleIdx].start)));
+    setSelectedPeg(null); setMoves(0); setPhase("playing");
+  }, [puzzleIdx]);
+
+  const isSolved = useCallback((p) => {
+    const g = PUZZLES[puzzleIdx].goal;
+    return p.every((peg, i) => peg.length === g[i].length && peg.every((d, j) => d === g[i][j]));
+  }, [puzzleIdx]);
+
+  const tapPeg = (i) => {
+    if (phase !== "playing") return;
+    if (selectedPeg === null) {
+      if (pegs[i].length > 0) setSelectedPeg(i);
+    } else if (selectedPeg === i) {
+      setSelectedPeg(null);
+    } else {
+      const fromTop = pegs[selectedPeg][pegs[selectedPeg].length - 1];
+      const toTop = pegs[i][pegs[i].length - 1];
+      if (toTop === undefined || fromTop < toTop) {
+        // Valid move
+        const np = pegs.map(p => [...p]);
+        const d = np[selectedPeg].pop();
+        np[i].push(d);
+        setPegs(np); setSelectedPeg(null);
+        const nm = moves + 1; setMoves(nm);
+        if (isSolved(np)) {
+          const min = PUZZLES[puzzleIdx].minMoves;
+          // Score: full points if optimal, scaled down for extra moves
+          const efficiency = Math.max(0.3, min / nm);
+          const pts = Math.round((50 + min * 8) * efficiency);
+          setScore(s => s + pts); setPhase("solved");
+          setTimeout(() => {
+            if (puzzleIdx + 1 >= PUZZLES.length) onComplete(score + pts);
+            else setPuzzleIdx(p => p + 1);
+          }, 1800);
+        }
+      } else {
+        // Invalid (larger on smaller) — flash
+        setSelectedPeg(null);
+      }
+    }
   };
 
-  const item = rounds[round].items[ci];
-  const quadrants = [
-    { label: "Do First", desc: "Urgent + Important", urgent: true, important: true, color: C.coral },
-    { label: "Schedule", desc: "Important", urgent: false, important: true, color: C.aqua },
-    { label: "Delegate", desc: "Urgent", urgent: true, important: false, color: C.gold },
-    { label: "Eliminate", desc: "Neither", urgent: false, important: false, color: C.slate },
-  ];
+  const puzzle = PUZZLES[puzzleIdx];
+  const renderPeg = (peg, i) => {
+    const isSelected = selectedPeg === i;
+    return (
+      <div key={i} onClick={() => tapPeg(i)} style={{
+        flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end",
+        cursor: phase === "playing" ? "pointer" : "default",
+        height: 200, position: "relative", padding: "0 4px",
+      }}>
+        {/* Peg pole */}
+        <div style={{
+          position: "absolute", bottom: 12, width: 6, height: 160,
+          background: isSelected ? C.gold : "rgba(255,255,255,0.25)",
+          borderRadius: 3, transition: "background 0.2s",
+        }} />
+        {/* Base */}
+        <div style={{
+          position: "absolute", bottom: 4, width: "85%", height: 10,
+          background: isSelected ? C.gold : "rgba(255,255,255,0.35)",
+          borderRadius: 5, transition: "background 0.2s",
+        }} />
+        {/* Discs */}
+        <div style={{ display: "flex", flexDirection: "column-reverse", alignItems: "center", paddingBottom: 12, position: "relative", zIndex: 2 }}>
+          {peg.map((d, j) => {
+            const isTopMost = j === peg.length - 1;
+            return (
+              <div key={j} style={{
+                width: 28 + d * 18, height: 22,
+                background: DISC_COLORS[d - 1],
+                borderRadius: 6, marginTop: 2,
+                border: isSelected && isTopMost ? "2px solid #fff" : "2px solid rgba(0,0,0,0.2)",
+                boxShadow: isSelected && isTopMost ? `0 0 14px ${DISC_COLORS[d - 1]}` : "0 2px 4px rgba(0,0,0,0.2)",
+                transition: "all 0.2s",
+              }} />
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+  const renderGoal = () => (
+    <div style={{ display: "flex", gap: 8, padding: 8, background: "rgba(255,255,255,0.04)", borderRadius: 10, marginBottom: 12 }}>
+      <div style={{ ...font(11, 700), color: "rgba(255,255,255,0.55)", letterSpacing: 1, textTransform: "uppercase", padding: "4px 0", writingMode: "vertical-rl", textOrientation: "mixed" }}>GOAL</div>
+      {puzzle.goal.map((peg, i) => (
+        <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column-reverse", alignItems: "center", padding: 6, height: 70, justifyContent: "flex-start" }}>
+          {peg.map((d, j) => (
+            <div key={j} style={{ width: 14 + d * 8, height: 8, background: DISC_COLORS[d - 1], borderRadius: 3, marginTop: 1, opacity: 0.85 }} />
+          ))}
+          {peg.length === 0 && <div style={{ width: 2, height: 50, background: "rgba(255,255,255,0.15)" }} />}
+        </div>
+      ))}
+    </div>
+  );
+
   return (
-    <GameChrome name="Priority Matrix" icon="📋" color="#e4925a" round={round + 1} totalRounds={rounds.length} score={score} timeLeft={0} maxTime={0} subtitle="Where does it go?">
-      {item && (
-        <>
-          <div style={{ padding: 18, borderRadius: 16, background: lastResult === "correct" ? `${C.success}26` : lastResult === "wrong" ? `${C.coral}26` : "rgba(255,255,255,0.08)", border: `2px solid ${lastResult === "correct" ? C.success : lastResult === "wrong" ? C.coral : "rgba(255,255,255,0.15)"}`, marginBottom: 16, textAlign: "center", transition: "all 0.15s" }}>
-            <div style={{ ...font(17, 600), color: "#fff", lineHeight: 1.4 }}>{item.task}</div>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-            {quadrants.map(q => (
-              <div key={q.label} onClick={() => handlePick(q.urgent, q.important)} style={{ padding: 14, borderRadius: 12, background: `${q.color}1f`, border: `2px solid ${q.color}55`, cursor: "pointer", textAlign: "center", transition: "all 0.2s" }}>
-                <div style={{ ...font(16, 700), color: q.color }}>{q.label}</div>
-                <div style={{ ...font(11, 500), color: "rgba(255,255,255,0.5)", marginTop: 2 }}>{q.desc}</div>
-              </div>
-            ))}
-          </div>
-          <div style={{ ...font(12, 500), color: "rgba(255,255,255,0.3)", textAlign: "center", marginTop: 10 }}>Task {ci + 1}/{rounds[round].items.length}</div>
-        </>
-      )}
+    <GameChrome name="Mind Bridge" icon="🗼" color="#e4925a" round={puzzleIdx + 1} totalRounds={PUZZLES.length} score={score} timeLeft={0} maxTime={0}
+      subtitle={phase === "solved" ? "Solved!" : `Plan ahead — ${puzzle.minMoves} moves is optimal`}>
+      {renderGoal()}
+      <div style={{
+        display: "flex", justifyContent: "space-around", alignItems: "flex-end",
+        background: "rgba(255,255,255,0.04)", borderRadius: 16, padding: "8px 4px 4px",
+        border: `1px solid rgba(255,255,255,0.08)`,
+      }}>
+        {pegs.map(renderPeg)}
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 14, padding: "0 4px" }}>
+        <div style={{ ...font(13, 600), color: "rgba(255,255,255,0.65)" }}>
+          Moves: <span style={{ ...mono(15), color: moves <= puzzle.minMoves ? C.success : moves <= puzzle.minMoves + 2 ? C.gold : C.coral }}>{moves}</span>
+          <span style={{ ...font(12), color: "rgba(255,255,255,0.4)" }}> / {puzzle.minMoves} optimal</span>
+        </div>
+        <div onClick={() => {
+            if (phase !== "playing") return;
+            setPegs(JSON.parse(JSON.stringify(puzzle.start)));
+            setMoves(0); setSelectedPeg(null);
+          }}
+          style={{ ...font(12, 600), color: C.aqua, padding: "4px 10px", background: `${C.aqua}1a`, borderRadius: 8, cursor: "pointer" }}>↺ Reset</div>
+      </div>
+      <div style={{ ...font(11, 500), color: "rgba(255,255,255,0.35)", textAlign: "center", marginTop: 14, lineHeight: 1.5 }}>
+        Move discs between pegs — only one at a time, and never a larger disc on a smaller one.<br/>
+        Tap a peg to pick up its top disc, tap another peg to drop it.
+      </div>
     </GameChrome>
   );
 };
 
+// ───────────────────────────────────────────────────────────
+// DUAL N-BACK — working memory updating (Jaeggi 2008).
+// ───────────────────────────────────────────────────────────
 const DualNBackGame = ({ onComplete }) => {
   const colors = [C.aqua, C.coral, C.gold, "#a08fc7", C.seagrass, C.shallow];
   const nBack = 2;
@@ -1276,66 +1449,162 @@ const DualNBackGame = ({ onComplete }) => {
   );
 };
 
-const SpeedSortGame = ({ onComplete }) => {
-  const categories = [
-    { name: "Sea Creature", color: C.aqua, items: ["Dolphin","Octopus","Coral","Tuna","Manta Ray","Sea Star","Anchovy","Sea Urchin"] },
-    { name: "Land Animal", color: "#e4925a", items: ["Wolf","Elephant","Tiger","Sparrow","Snake","Squirrel","Horse","Hawk"] },
+// ───────────────────────────────────────────────────────────
+// RULE SHIFT — cognitive flexibility / set-shifting.
+// Inspired by the Wisconsin Card Sorting Test (Berg, 1948).
+// Cards vary on three dimensions: COLOR, SHAPE, COUNT.
+// You sort by a hidden rule. Get feedback after each card.
+// After several correct, the rule silently changes — you must
+// detect this and adapt. The classic flexibility paradigm.
+// ───────────────────────────────────────────────────────────
+const RuleShiftGame = ({ onComplete }) => {
+  const COLORS = [
+    { name: "red", hex: "#ff6b6b" },
+    { name: "blue", hex: "#5a9ee0" },
+    { name: "green", hex: "#5ed3a3" },
+    { name: "gold", hex: "#f4c763" },
   ];
-  const [items, setItems] = useState([]);
-  const [ci, setCi] = useState(0);
+  const SHAPES = ["circle", "triangle", "square", "star"];
+  const RULES = ["color", "shape", "count"];
+  const TOTAL = 20;
+
+  const buildCard = () => ({
+    color: Math.floor(Math.random() * 4),
+    shape: Math.floor(Math.random() * 4),
+    count: Math.floor(Math.random() * 4) + 1,
+  });
+
+  // Generate "category" reference cards covering all dimensions
+  const refCards = useMemo(() => [
+    { color: 0, shape: 0, count: 1 }, // red, circle, 1
+    { color: 1, shape: 1, count: 2 }, // blue, triangle, 2
+    { color: 2, shape: 2, count: 3 }, // green, square, 3
+    { color: 3, shape: 3, count: 4 }, // gold, star, 4
+  ], []);
+
+  const [trial, setTrial] = useState(0);
   const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(30);
-  const [streak, setStreak] = useState(0);
-  const [lastResult, setLastResult] = useState(null);
-  const [done, setDone] = useState(false);
-  const timerRef = useRef(null);
+  const [card, setCard] = useState(buildCard);
+  const [currentRule, setCurrentRule] = useState(() => RULES[Math.floor(Math.random() * 3)]);
+  const [streak, setStreak] = useState(0); // consecutive correct under current rule
+  const [feedback, setFeedback] = useState(null);
+  const [locked, setLocked] = useState(false);
+  const [ruleChanged, setRuleChanged] = useState(false);
 
-  useEffect(() => {
-    setItems(categories.flatMap(c => c.items.map(item => ({ text: item, category: c.name, color: c.color }))).sort(() => Math.random() - 0.5));
-    timerRef.current = setInterval(() => setTimeLeft(t => { if (t <= 0.1) { clearInterval(timerRef.current); setDone(true); return 0; } return +(t - 0.1).toFixed(1); }), 100);
-    return () => clearInterval(timerRef.current);
-    // eslint-disable-next-line
-  }, []);
-
-  useEffect(() => { if (done) { clearInterval(timerRef.current); setTimeout(() => onComplete(score), 1500); } }, [done]);
-
-  const classify = (cat) => {
-    if (done || ci >= items.length) return;
-    const correct = items[ci].category === cat;
-    setScore(s => Math.max(0, s + (correct ? 10 + (streak >= 3 ? 5 : 0) : -5)));
-    setStreak(s => correct ? s + 1 : 0);
-    setLastResult(correct ? "correct" : "wrong"); setTimeout(() => setLastResult(null), 300);
-    if (ci + 1 >= items.length) setDone(true); else setCi(c => c + 1);
+  const correctRefIdx = (c, rule) => {
+    if (rule === "color") return c.color;
+    if (rule === "shape") return c.shape;
+    return c.count - 1;
   };
 
-  const item = items[ci];
+  const tap = (idx) => {
+    if (locked) return;
+    setLocked(true);
+    const correctIdx = correctRefIdx(card, currentRule);
+    const correct = idx === correctIdx;
+    let pts = correct ? 12 : -4;
+    if (correct && ruleChanged) { pts += 8; setRuleChanged(false); } // bonus for catching the shift
+    setScore(s => Math.max(0, s + pts));
+    setFeedback(correct ? "correct" : "wrong");
+    const newStreak = correct ? streak + 1 : 0;
+    setStreak(newStreak);
+    setTimeout(() => {
+      // After 4-6 in a row, silently shift the rule
+      if (newStreak >= 4 + Math.floor(Math.random() * 3)) {
+        const others = RULES.filter(r => r !== currentRule);
+        setCurrentRule(others[Math.floor(Math.random() * others.length)]);
+        setStreak(0); setRuleChanged(true);
+      }
+      if (trial + 1 >= TOTAL) { onComplete(score + pts); return; }
+      setTrial(t => t + 1); setCard(buildCard()); setFeedback(null); setLocked(false);
+    }, 700);
+  };
+
+  // SVG shape renderer
+  const renderShape = (shapeIdx, color, size) => {
+    const c = COLORS[color].hex;
+    if (shapeIdx === 0) return <circle cx={size/2} cy={size/2} r={size/2 - 2} fill={c} />;
+    if (shapeIdx === 1) return <polygon points={`${size/2},2 ${size-2},${size-3} 2,${size-3}`} fill={c} />;
+    if (shapeIdx === 2) return <rect x="2" y="2" width={size-4} height={size-4} rx="2" fill={c} />;
+    // star
+    const cx = size/2, cy = size/2, r1 = size/2 - 2, r2 = r1 * 0.45;
+    const pts = [];
+    for (let i = 0; i < 10; i++) {
+      const a = (Math.PI / 5) * i - Math.PI / 2;
+      const r = i % 2 === 0 ? r1 : r2;
+      pts.push(`${cx + Math.cos(a) * r},${cy + Math.sin(a) * r}`);
+    }
+    return <polygon points={pts.join(" ")} fill={c} />;
+  };
+
+  const renderCard = (c, big = false) => {
+    const sz = big ? 36 : 22;
+    const shapes = Array.from({ length: c.count });
+    return (
+      <div style={{
+        background: "rgba(255,255,255,0.95)", borderRadius: 12,
+        padding: big ? 12 : 8, width: big ? 132 : 72, height: big ? 132 : 72,
+        display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "center",
+        gap: big ? 4 : 2, border: "2px solid rgba(255,255,255,0.3)",
+      }}>
+        {shapes.map((_, i) => (
+          <svg key={i} width={sz} height={sz} viewBox={`0 0 ${sz} ${sz}`}>{renderShape(c.shape, c.color, sz)}</svg>
+        ))}
+      </div>
+    );
+  };
+
   return (
-    <GameChrome name="Speed Sort" icon="⚡" color="#e8c75c" round={ci + 1} totalRounds={items.length} score={score} timeLeft={timeLeft / 3} maxTime={10}
-      subtitle={streak >= 3 ? `🔥 ${streak} streak! Bonus active` : "Classify as fast as you can"}>
-      {!done && item ? (
-        <>
-          <div style={{ padding: 24, borderRadius: 18, textAlign: "center", marginBottom: 20, background: lastResult === "correct" ? `${C.success}26` : lastResult === "wrong" ? `${C.coral}26` : "rgba(255,255,255,0.08)", border: `3px solid ${lastResult === "correct" ? C.success : lastResult === "wrong" ? C.coral : "rgba(255,255,255,0.15)"}`, transition: "all 0.15s" }}>
-            <div style={{ ...displayFont(32), color: "#fff" }}>{item.text}</div>
+    <GameChrome name="Rule Shift" icon="🔀" color="#e8c75c" round={trial + 1} totalRounds={TOTAL} score={score} timeLeft={0} maxTime={0}
+      subtitle="Sort by the hidden rule — it will change">
+      {/* Reference cards */}
+      <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 18 }}>
+        {refCards.map((rc, i) => (
+          <div key={i} onClick={() => tap(i)} style={{
+            cursor: locked ? "default" : "pointer",
+            opacity: feedback && correctRefIdx(card, currentRule) === i ? 1 : feedback ? 0.4 : 1,
+            transform: feedback === "correct" && correctRefIdx(card, currentRule) === i ? "scale(1.08)" : "scale(1)",
+            transition: "all 0.25s",
+          }}
+            onMouseDown={e => !locked && (e.currentTarget.style.transform = "scale(0.94)")}
+            onMouseUp={e => (e.currentTarget.style.transform = "scale(1)")}
+            onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+          >
+            {renderCard(rc)}
           </div>
-          <div style={{ display: "flex", gap: 14 }}>
-            {categories.map(c => (
-              <div key={c.name} onClick={() => classify(c.name)} style={{ flex: 1, padding: "20px 16px", borderRadius: 16, textAlign: "center", cursor: "pointer", background: `${c.color}1a`, border: `2px solid ${c.color}4d`, transition: "all 0.2s" }}>
-                <div style={{ ...font(18, 700), color: c.color }}>{c.name}</div>
-              </div>
-            ))}
-          </div>
-        </>
-      ) : (
-        <div style={{ textAlign: "center", marginTop: 40 }}>
-          <div style={{ ...displayFont(28), color: "#fff" }}>Time's up!</div>
-          <div style={{ ...mono(20), color: C.gold, marginTop: 8 }}>Final: {score} pts</div>
+        ))}
+      </div>
+      <div style={{ ...font(12, 600), color: "rgba(255,255,255,0.5)", textAlign: "center", marginBottom: 8 }}>
+        Match this card to one above:
+      </div>
+      {/* Active card */}
+      <div style={{
+        display: "flex", justifyContent: "center", marginBottom: 14,
+        opacity: feedback ? 0.6 : 1, transition: "opacity 0.2s",
+      }}>{renderCard(card, true)}</div>
+      {feedback && (
+        <div style={{ ...font(15, 600), color: feedback === "correct" ? C.success : C.coral, textAlign: "center" }}>
+          {feedback === "correct" ? `✓ Correct${ruleChanged ? " — rule change caught!" : ""}` : "✗ Try a different dimension"}
         </div>
       )}
+      <div style={{ ...font(11, 500), color: "rgba(255,255,255,0.35)", textAlign: "center", marginTop: 16, lineHeight: 1.5 }}>
+        Color, shape, or count — only one rule is right.<br/>
+        When you stop getting "correct," the rule has shifted.
+      </div>
     </GameChrome>
   );
 };
 
-const GAME_COMPONENTS = { pattern: PatternRecallGame, number: NumberFlowGame, focus: FocusGridGame, decision: DecisionLabGame, wordmaze: WordMazeGame, priority: PriorityMatrixGame, dualn: DualNBackGame, speedsort: SpeedSortGame };
+const GAME_COMPONENTS = {
+  pattern: PatternRecallGame,
+  number: NumberFlowGame,
+  focus: FocusGridGame,
+  stroop: StroopGame,
+  wordmaze: WordMazeGame,
+  bridge: MindBridgeGame,
+  dualn: DualNBackGame,
+  ruleshift: RuleShiftGame,
+};
 
 // ═══════════════════════════════════════════════════════════
 // CREATURE UNLOCK CELEBRATION
