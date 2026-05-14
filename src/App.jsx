@@ -813,7 +813,7 @@ const GAMES = [
   { id: "stroop", name: "Stroop Showdown", icon: "🎨", color: C.seagrass, skill: "Inhibition", desc: "Override the automatic response — tap the ink color, not the word", difficulty: "Hard" },
   { id: "wordmaze", name: "Word Maze", icon: "🔤", color: C.coral, skill: "Verbal Fluency", desc: "Build word chains from connections", difficulty: "Medium" },
   { id: "bridge", name: "Reef Crossing", icon: "🛥️", color: "#e4925a", skill: "Planning", desc: "Ferry creatures across the trench — plan ahead so nothing gets eaten", difficulty: "Hard" },
-  { id: "dualn", name: "Dual N-Back", icon: "🔁", color: C.shallow, skill: "Working Memory", desc: "Track two streams simultaneously", difficulty: "Hard" },
+  { id: "dualn", name: "Running Span", icon: "🌊", color: C.shallow, skill: "Working Memory", desc: "Recall the last N of a stream of unknown length", difficulty: "Hard" },
   { id: "ruleshift", name: "Rule Shift", icon: "🔀", color: "#e8c75c", skill: "Flexibility", desc: "Discover the hidden rule — then adapt when it changes", difficulty: "Hard" },
 ];
 
@@ -1859,95 +1859,243 @@ const ReefCrossingGame = ({ onComplete }) => {
   );
 };
 
-// ───────────────────────────────────────────────────────────
-// DUAL N-BACK — working memory updating (Jaeggi 2008).
-// Adult tuning: starts at n=2, escalates to n=3 in the second
-// half. Faster stimulus presentation (1100ms). Wrong responses
-// cost points — false alarms are the real difficulty signature.
-// ───────────────────────────────────────────────────────────
-const DualNBackGame = ({ onComplete }) => {
-  const colors = [C.aqua, C.coral, C.gold, "#a08fc7", C.seagrass, C.shallow];
-  const totalTrials = 28;
-  const SHIFT_AT = 14; // switch from n=2 to n=3 at this trial
 
-  const [trial, setTrial] = useState(0);
-  const [currentPos, setCurrentPos] = useState(-1);
-  const [currentColor, setCurrentColor] = useState(0);
+// ───────────────────────────────────────────────────────────
+// RUNNING SPAN — working memory updating (Pollack et al. 1959).
+// Numbers stream past one at a time. Length is unknown. When
+// the stream stops, recall the LAST N items in order. You
+// can't memorize the whole list — you must continuously
+// update what you're holding, dropping the oldest and adding
+// the newest. This is the classic running-span paradigm and
+// trains the same skill as N-Back with a cleaner interface.
+// ───────────────────────────────────────────────────────────
+const RunningSpanGame = ({ onComplete }) => {
+  const TOTAL_ROUNDS = 6;
+  // Recall count per round — grows from 3 to 4
+  const RECALL_COUNTS = [3, 3, 3, 4, 4, 4];
+  // Stream length range per round — unknown to player, varies each round
+  const STREAM_RANGES = [[5,7],[6,8],[7,10],[7,9],[8,11],[9,12]];
+  const STREAM_PACE = 850; // ms per number
+
+  const [round, setRound] = useState(0);
+  const [phase, setPhase] = useState("countdown"); // countdown | streaming | recall | feedback | done
+  const [countdown, setCountdown] = useState(3);
+  const [stream, setStream] = useState([]);    // full hidden sequence
+  const [streamIdx, setStreamIdx] = useState(0);
+  const [shownDigit, setShownDigit] = useState(null);
+  const [recallTarget, setRecallTarget] = useState(3);
+  const [playerInput, setPlayerInput] = useState([]);
   const [score, setScore] = useState(0);
-  const [phase, setPhase] = useState("show");
-  const [posMatch, setPosMatch] = useState(false);
-  const [colorMatch, setColorMatch] = useState(false);
   const [feedback, setFeedback] = useState(null);
-  const [responded, setResponded] = useState(false);
-  const seqRef = useRef([]);
+  const timerRef = useRef(null);
 
-  const getNBack = (t) => t < SHIFT_AT ? 2 : 3;
-
-  const showTrial = useCallback((t, seq) => {
-    if (t >= totalTrials) { onComplete(score); return; }
-    setTrial(t); setCurrentPos(seq[t].pos); setCurrentColor(seq[t].col);
-    setPhase("show"); setPosMatch(false); setColorMatch(false); setResponded(false); setFeedback(null);
-    setTimeout(() => setPhase("respond"), 1100);
-  }, [score, onComplete]);
-
-  useEffect(() => {
+  // Build a fresh stream for the round
+  const startRound = useCallback((r) => {
+    const [lo, hi] = STREAM_RANGES[r];
+    const len = lo + Math.floor(Math.random() * (hi - lo + 1));
+    // Generate digits 0-9, avoiding adjacent repeats so you can't lean on visual sameness
     const seq = [];
-    for (let i = 0; i < totalTrials; i++) {
-      const nb = getNBack(i);
-      let pos = Math.floor(Math.random() * 9), col = Math.floor(Math.random() * colors.length);
-      // ~33% chance of n-back match per dimension
-      if (i >= nb && Math.random() < 0.33) pos = seq[i - nb].pos;
-      if (i >= nb && Math.random() < 0.33) col = seq[i - nb].col;
-      seq.push({ pos, col });
+    for (let i = 0; i < len; i++) {
+      let d;
+      do { d = Math.floor(Math.random() * 10); } while (i > 0 && d === seq[i-1]);
+      seq.push(d);
     }
-    seqRef.current = seq; showTrial(0, seq);
-    // eslint-disable-next-line
+    setStream(seq);
+    setStreamIdx(0);
+    setShownDigit(null);
+    setPlayerInput([]);
+    setFeedback(null);
+    setRecallTarget(RECALL_COUNTS[r]);
+    setPhase("streaming");
   }, []);
 
-  const submit = useCallback(() => {
-    if (responded) return;
-    setResponded(true);
-    const seq = seqRef.current; const t = trial; const nb = getNBack(t);
-    const aPM = t >= nb && seq[t].pos === seq[t - nb].pos;
-    const aCM = t >= nb && seq[t].col === seq[t - nb].col;
-    const pC = posMatch === aPM, cC = colorMatch === aCM;
-    // +10 for correct, -8 for false alarm or miss — penalizes guessing
-    const posPts = pC ? 10 : -8;
-    const colPts = cC ? 10 : -8;
-    const pts = posPts + colPts;
-    setScore(s => Math.max(0, s + pts));
-    setFeedback({ posCorrect: pC, colCorrect: cC, pts });
-    setTimeout(() => showTrial(t + 1, seq), 900);
-  }, [responded, trial, posMatch, colorMatch, showTrial]);
-
+  // Countdown effect
   useEffect(() => {
-    if (phase === "respond" && !responded) { const t = setTimeout(() => submit(), 2300); return () => clearTimeout(t); }
-  }, [phase, responded, submit]);
+    if (phase !== "countdown") return;
+    timerRef.current = setInterval(() => {
+      setCountdown(c => {
+        if (c <= 1) {
+          clearInterval(timerRef.current);
+          startRound(round);
+          return 3;
+        }
+        return c - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timerRef.current);
+  }, [phase, round, startRound]);
 
-  const currentNB = getNBack(trial);
+  // Streaming effect — display each digit in turn
+  useEffect(() => {
+    if (phase !== "streaming") return;
+    if (streamIdx >= stream.length) {
+      setShownDigit(null);
+      const t = setTimeout(() => setPhase("recall"), 400);
+      return () => clearTimeout(t);
+    }
+    setShownDigit(stream[streamIdx]);
+    let nextT;
+    const showT = setTimeout(() => {
+      setShownDigit(null);
+      nextT = setTimeout(() => setStreamIdx(i => i + 1), 150);
+    }, STREAM_PACE - 150);
+    return () => { clearTimeout(showT); if (nextT) clearTimeout(nextT); };
+  }, [phase, streamIdx, stream]);
 
-  return (
-    <GameChrome name="Dual N-Back" icon="🔁" color={C.shallow} round={trial + 1} totalRounds={totalTrials} score={score} timeLeft={0} maxTime={0} subtitle={`Match position OR color from ${currentNB} steps ago${trial === SHIFT_AT ? " — N just increased!" : ""}`}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, width: "min(100%, 240px)", margin: "0 auto 16px" }}>
-        {Array.from({ length: 9 }, (_, i) => (
-          <div key={i} style={{ aspectRatio: "1", borderRadius: 12, background: i === currentPos && phase === "show" ? colors[currentColor] : "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", transition: "all 0.3s", boxShadow: i === currentPos && phase === "show" ? `0 0 20px ${colors[currentColor]}66` : "none" }} />
-        ))}
-      </div>
-      <div style={{ display: "flex", gap: 12, justifyContent: "center", marginBottom: 12 }}>
-        <div onClick={() => !responded && setPosMatch(p => !p)} style={{ padding: "12px 16px", borderRadius: 12, cursor: responded ? "default" : "pointer", background: posMatch ? `${C.shallow}66` : "rgba(255,255,255,0.06)", border: `2px solid ${posMatch ? C.shallow : "rgba(255,255,255,0.1)"}`, ...font(13, 600), color: posMatch ? "#fff" : "rgba(255,255,255,0.6)" }}>📍 Position</div>
-        <div onClick={() => !responded && setColorMatch(c => !c)} style={{ padding: "12px 16px", borderRadius: 12, cursor: responded ? "default" : "pointer", background: colorMatch ? `${C.coral}66` : "rgba(255,255,255,0.06)", border: `2px solid ${colorMatch ? C.coral : "rgba(255,255,255,0.1)"}`, ...font(13, 600), color: colorMatch ? "#fff" : "rgba(255,255,255,0.6)" }}>🎨 Color</div>
-      </div>
-      {phase === "respond" && !responded && <Btn onClick={submit} style={{ maxWidth: 200, margin: "0 auto", padding: "10px 24px" }}>Confirm</Btn>}
-      {feedback && (
-        <div style={{ textAlign: "center", marginTop: 8, display: "flex", gap: 12, justifyContent: "center" }}>
-          <span style={{ ...font(14, 600), color: feedback.posCorrect ? C.success : C.coral }}>Pos: {feedback.posCorrect ? "✓" : "✗"}</span>
-          <span style={{ ...font(14, 600), color: feedback.colCorrect ? C.success : C.coral }}>Color: {feedback.colCorrect ? "✓" : "✗"}</span>
-          <span style={{ ...mono(14), color: feedback.pts >= 0 ? C.gold : C.coral }}>{feedback.pts >= 0 ? "+" : ""}{feedback.pts}</span>
+  const tapDigit = (d) => {
+    if (phase !== "recall") return;
+    if (playerInput.length >= recallTarget) return;
+    const next = [...playerInput, d];
+    setPlayerInput(next);
+    if (next.length === recallTarget) {
+      // Grade — last N of stream
+      const correctTail = stream.slice(-recallTarget);
+      let positionsCorrect = 0;
+      for (let i = 0; i < recallTarget; i++) {
+        if (next[i] === correctTail[i]) positionsCorrect++;
+      }
+      const allCorrect = positionsCorrect === recallTarget;
+      // Score: 15 per correct position + 20 bonus for perfect
+      const pts = positionsCorrect * 15 + (allCorrect ? 20 : 0);
+      setScore(s => s + pts);
+      setFeedback({ correctTail, positionsCorrect, allCorrect, pts });
+      setPhase("feedback");
+      setTimeout(() => {
+        if (round + 1 >= TOTAL_ROUNDS) {
+          onComplete(score + pts);
+        } else {
+          setRound(r => r + 1);
+          setCountdown(3);
+          setPhase("countdown");
+        }
+      }, 2400);
+    }
+  };
+
+  const undoTap = () => {
+    if (phase !== "recall") return;
+    setPlayerInput(p => p.slice(0, -1));
+  };
+
+  // ─── Render ───
+  if (phase === "countdown") {
+    return (
+      <GameChrome name="Running Span" icon="🌊" color={C.shallow} round={round + 1} totalRounds={TOTAL_ROUNDS} score={score} timeLeft={0} maxTime={0}
+        subtitle={`Watch the digits. Recall the LAST ${RECALL_COUNTS[round]} when it stops.`}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", padding: "40px 0" }}>
+          <div style={{ ...displayFont(72), color: C.gold }}>{countdown}</div>
+          <div style={{ ...font(15, 500), color: "rgba(255,255,255,0.55)", marginTop: 16, textAlign: "center", maxWidth: 280, lineHeight: 1.5 }}>
+            Stream length is unknown.<br/>You must constantly drop the oldest digit and remember the newest.
+          </div>
         </div>
-      )}
-      <div style={{ ...font(12, 500), color: "rgba(255,255,255,0.3)", textAlign: "center", marginTop: 12 }}>Toggle matches, then confirm. Wrong = -8.</div>
-    </GameChrome>
-  );
+      </GameChrome>
+    );
+  }
+
+  if (phase === "streaming") {
+    return (
+      <GameChrome name="Running Span" icon="🌊" color={C.shallow} round={round + 1} totalRounds={TOTAL_ROUNDS} score={score} timeLeft={0} maxTime={0}
+        subtitle={`Remember the LAST ${recallTarget} digits`}>
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "center",
+          height: 200, margin: "20px auto",
+        }}>
+          {shownDigit !== null ? (
+            <div style={{
+              ...displayFont(120), color: C.shallow,
+              textShadow: `0 0 30px ${C.shallow}88`,
+              animation: "fadeIn 0.15s ease",
+            }}>{shownDigit}</div>
+          ) : (
+            <div style={{ ...displayFont(120), color: "rgba(255,255,255,0.08)" }}>·</div>
+          )}
+        </div>
+        <div style={{ ...font(12, 600), color: "rgba(255,255,255,0.4)", textAlign: "center", letterSpacing: 1, textTransform: "uppercase" }}>
+          Digit {streamIdx + 1} · don't memorize them all
+        </div>
+      </GameChrome>
+    );
+  }
+
+  if (phase === "recall" || phase === "feedback") {
+    const correctTail = phase === "feedback" ? feedback.correctTail : null;
+    return (
+      <GameChrome name="Running Span" icon="🌊" color={C.shallow} round={round + 1} totalRounds={TOTAL_ROUNDS} score={score} timeLeft={0} maxTime={0}
+        subtitle={phase === "feedback" ? (feedback.allCorrect ? "Perfect recall!" : `${feedback.positionsCorrect}/${recallTarget} correct`) : `Tap the last ${recallTarget} digits in order`}>
+        {/* Player's answer slots */}
+        <div style={{ display: "flex", gap: 12, justifyContent: "center", margin: "20px 0 12px" }}>
+          {Array.from({ length: recallTarget }, (_, i) => {
+            const filled = playerInput[i] !== undefined;
+            const correct = phase === "feedback" && filled && playerInput[i] === correctTail[i];
+            const wrong = phase === "feedback" && filled && playerInput[i] !== correctTail[i];
+            return (
+              <div key={i} style={{
+                width: 56, height: 72, borderRadius: 12,
+                background: correct ? `${C.success}40` : wrong ? `${C.coral}33` : filled ? `${C.shallow}40` : "rgba(255,255,255,0.05)",
+                border: `2px solid ${correct ? C.success : wrong ? C.coral : filled ? C.shallow : "rgba(255,255,255,0.15)"}`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                ...displayFont(36),
+                color: correct ? C.success : wrong ? C.coral : "#fff",
+                transition: "all 0.2s",
+              }}>
+                {filled ? playerInput[i] : ""}
+              </div>
+            );
+          })}
+        </div>
+        {/* Show correct sequence below player's answer on feedback */}
+        {phase === "feedback" && !feedback.allCorrect && (
+          <div style={{ textAlign: "center", marginBottom: 16 }}>
+            <div style={{ ...font(11, 600), color: "rgba(255,255,255,0.5)", letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>Correct was:</div>
+            <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+              {correctTail.map((d, i) => (
+                <div key={i} style={{
+                  width: 36, height: 44, borderRadius: 8,
+                  background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.2)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  ...font(20, 700), color: "rgba(255,255,255,0.85)",
+                }}>{d}</div>
+              ))}
+            </div>
+          </div>
+        )}
+        {/* Digit keypad */}
+        {phase === "recall" && (
+          <>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8, maxWidth: 320, margin: "16px auto 0" }}>
+              {[1,2,3,4,5,6,7,8,9,0].map(d => (
+                <div key={d} onClick={() => tapDigit(d)} style={{
+                  aspectRatio: "1", borderRadius: 12, cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  background: "rgba(255,255,255,0.08)",
+                  border: "1.5px solid rgba(255,255,255,0.15)",
+                  ...displayFont(24), color: "#fff",
+                  transition: "transform 0.08s, background 0.15s",
+                }}
+                  onMouseDown={e => (e.currentTarget.style.transform = "scale(0.93)")}
+                  onMouseUp={e => (e.currentTarget.style.transform = "scale(1)")}
+                  onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+                >{d}</div>
+              ))}
+            </div>
+            {playerInput.length > 0 && (
+              <div onClick={undoTap} style={{
+                ...font(12, 600), color: "rgba(255,255,255,0.5)", textAlign: "center",
+                marginTop: 14, padding: "6px 12px", cursor: "pointer",
+              }}>← Undo last</div>
+            )}
+          </>
+        )}
+        {phase === "feedback" && (
+          <div style={{ textAlign: "center", marginTop: 12 }}>
+            <span style={{ ...mono(16), color: feedback.pts > 0 ? C.gold : C.coral }}>+{feedback.pts}</span>
+          </div>
+        )}
+      </GameChrome>
+    );
+  }
+
+  return null;
 };
 
 // ───────────────────────────────────────────────────────────
@@ -2110,7 +2258,7 @@ const GAME_COMPONENTS = {
   stroop: StroopGame,
   wordmaze: WordMazeGame,
   bridge: ReefCrossingGame,
-  dualn: DualNBackGame,
+  dualn: RunningSpanGame,
   ruleshift: RuleShiftGame,
 };
 
