@@ -975,7 +975,15 @@ const GameChrome = ({ name, icon, color, round, totalRounds, score, timeLeft, ma
 // PATTERN RECALL — Corsi block-tapping paradigm.
 // Visuospatial working memory.
 // ───────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────
+// PATTERN RECALL — Corsi-style visuospatial working memory.
+// Tuned for adult capacity: 5×5 grid (25 cells), sequences
+// start at length 5 (above typical Corsi span ~5.5) and grow
+// to 9 across 6 rounds. Reveal pace ~500ms to push processing.
+// ───────────────────────────────────────────────────────────
 const PatternRecallGame = ({ onComplete }) => {
+  const GRID_SIZE = 25; // 5x5
+  const TOTAL_ROUNDS = 6;
   const [phase, setPhase] = useState("countdown");
   const [countdown, setCountdown] = useState(3);
   const [sequence, setSequence] = useState([]);
@@ -983,19 +991,19 @@ const PatternRecallGame = ({ onComplete }) => {
   const [playerInput, setPlayerInput] = useState([]);
   const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
-  const [seqLen, setSeqLen] = useState(3);
+  const [seqLen, setSeqLen] = useState(5);
   const [result, setResult] = useState(null);
   const timerRef = useRef(null);
 
   const startRound = useCallback(() => {
-    const seq = Array.from({ length: seqLen }, () => Math.floor(Math.random() * 9));
+    const seq = Array.from({ length: seqLen }, () => Math.floor(Math.random() * GRID_SIZE));
     setSequence(seq); setPlayerInput([]); setResult(null); setPhase("watching"); setShowIdx(0);
     let i = 0;
     const showInt = setInterval(() => {
       i++;
-      if (i >= seq.length) { clearInterval(showInt); setTimeout(() => { setShowIdx(-1); setPhase("recalling"); }, 500); }
+      if (i >= seq.length) { clearInterval(showInt); setTimeout(() => { setShowIdx(-1); setPhase("recalling"); }, 400); }
       else setShowIdx(i);
-    }, 700);
+    }, 500);
   }, [seqLen]);
 
   useEffect(() => {
@@ -1013,12 +1021,17 @@ const PatternRecallGame = ({ onComplete }) => {
     setPlayerInput(next);
     if (next.length === sequence.length) {
       const correct = next.every((v, i) => v === sequence[i]);
-      const pts = correct ? seqLen * 20 + round * 5 : 0;
+      const pts = correct ? seqLen * 25 + round * 8 : 0;
       setResult(correct); setScore(s => s + pts); setPhase("feedback");
       setTimeout(() => {
-        if (round < 5) { setRound(r => r + 1); if (correct) setSeqLen(l => Math.min(l + 1, 7)); startRound(); }
+        if (round < TOTAL_ROUNDS) {
+          setRound(r => r + 1);
+          // Adaptive: +1 if correct, -1 if wrong (but min 5)
+          setSeqLen(l => correct ? Math.min(l + 1, 9) : Math.max(l - 1, 5));
+          startRound();
+        }
         else onComplete(score + pts);
-      }, 1200);
+      }, 1100);
     }
   };
 
@@ -1030,80 +1043,139 @@ const PatternRecallGame = ({ onComplete }) => {
   );
 
   return (
-    <GameChrome name="Pattern Recall" icon="🧩" color={C.aqua} round={round} totalRounds={5} score={score} timeLeft={0} maxTime={0}
-      subtitle={phase === "watching" ? "Watch the pattern" : phase === "recalling" ? "Tap the tiles in order" : result ? "Nailed it!" : "Almost!"}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, width: "min(100%, 280px)", margin: "0 auto" }}>
-        {Array.from({ length: 9 }, (_, i) => {
+    <GameChrome name="Pattern Recall" icon="🧩" color={C.aqua} round={round} totalRounds={TOTAL_ROUNDS} score={score} timeLeft={0} maxTime={0}
+      subtitle={phase === "watching" ? `Memorize ${seqLen} tiles` : phase === "recalling" ? "Tap them in order" : result ? "Nailed it!" : "Almost!"}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6, width: "min(100%, 320px)", margin: "0 auto" }}>
+        {Array.from({ length: GRID_SIZE }, (_, i) => {
           const isLit = phase === "watching" && showIdx >= 0 && sequence[showIdx] === i;
           const isTapped = playerInput.includes(i);
           return (
             <div key={i} onClick={() => handleTap(i)} style={{
-              aspectRatio: "1", borderRadius: 14, cursor: phase === "recalling" ? "pointer" : "default",
+              aspectRatio: "1", borderRadius: 10, cursor: phase === "recalling" ? "pointer" : "default",
               background: isLit ? C.aqua : isTapped ? `${C.aqua}80` : "rgba(255,255,255,0.08)",
               border: `2px solid ${isLit ? C.aqua : "rgba(255,255,255,0.1)"}`,
-              transform: isLit ? "scale(1.08)" : "scale(1)", transition: "all 0.2s",
+              transform: isLit ? "scale(1.08)" : "scale(1)", transition: "all 0.15s",
               boxShadow: isLit ? `0 0 20px ${C.aqua}66` : "none"
             }} />
           );
         })}
       </div>
       {phase === "recalling" && (
-        <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 16 }}>
+        <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 16, flexWrap: "wrap", maxWidth: 280 }}>
           {Array.from({ length: seqLen }, (_, i) => (
-            <div key={i} style={{ width: 12, height: 12, borderRadius: "50%", background: i < playerInput.length ? C.aqua : "rgba(255,255,255,0.2)" }} />
+            <div key={i} style={{ width: 10, height: 10, borderRadius: "50%", background: i < playerInput.length ? C.aqua : "rgba(255,255,255,0.2)" }} />
           ))}
         </div>
       )}
-      {result !== null && <div style={{ ...font(16, 600), color: result ? C.success : C.coral, textAlign: "center", marginTop: 12 }}>{result ? `✓ +${seqLen * 20 + round * 5}` : "✗ Keep going!"}</div>}
+      {result !== null && <div style={{ ...font(16, 600), color: result ? C.success : C.coral, textAlign: "center", marginTop: 12 }}>{result ? `✓ +${seqLen * 25 + round * 8}` : `✗ Sequence was ${sequence.length} long`}</div>}
     </GameChrome>
   );
 };
 
 // ───────────────────────────────────────────────────────────
 // NUMBER FLOW — fluid reasoning under time pressure.
+// Adult tuning: 7s per problem, mixed problem types including
+// arithmetic & geometric sequences, squares, multi-step word
+// problems, and percent-of operations. No more "a + b".
 // ───────────────────────────────────────────────────────────
 const NumberFlowGame = ({ onComplete }) => {
+  const TIME_PER = 7;
+  const TOTAL = 10;
   const [round, setRound] = useState(0);
   const [score, setScore] = useState(0);
   const [selected, setSelected] = useState(null);
-  const [timeLeft, setTimeLeft] = useState(10);
+  const [timeLeft, setTimeLeft] = useState(TIME_PER);
   const timerRef = useRef(null);
-  const [problems] = useState(() => Array.from({ length: 8 }, (_, i) => {
-    if (i % 2 === 0) {
-      const start = Math.floor(Math.random() * 8) + 2, step = Math.floor(Math.random() * 4) + 2;
-      const seq = Array.from({ length: 4 }, (_, j) => start + step * j), answer = start + step * 4;
-      const ch = new Set([answer]); while (ch.size < 4) { const o = Math.floor(Math.random() * 5) + 1; ch.add(Math.random() > 0.5 ? answer + o : Math.max(1, answer - o)); }
-      return { type: "seq", seq, answer, choices: [...ch].sort(() => Math.random() - 0.5) };
+
+  const buildProblem = (idx) => {
+    const r = Math.random();
+    // Type distribution shifts harder as rounds progress
+    const hardness = idx / TOTAL;
+    const makeDistractors = (answer, spread = 6) => {
+      const ch = new Set([answer]);
+      let attempts = 0;
+      while (ch.size < 4 && attempts < 30) {
+        const o = Math.floor(Math.random() * spread) + 1;
+        ch.add(Math.random() > 0.5 ? answer + o : Math.max(1, answer - o));
+        attempts++;
+      }
+      return [...ch].sort(() => Math.random() - 0.5);
+    };
+
+    if (r < 0.25) {
+      // Arithmetic sequence with larger steps and possibly negative direction
+      const start = Math.floor(Math.random() * 30) + 5;
+      const step = (Math.random() < 0.3 ? -1 : 1) * (Math.floor(Math.random() * 7) + 3);
+      const seq = Array.from({ length: 4 }, (_, j) => start + step * j);
+      const answer = start + step * 4;
+      return { type: "seq", seq, answer, choices: makeDistractors(answer, 5) };
+    } else if (r < 0.50) {
+      // Geometric sequence — doubling, tripling, squaring patterns
+      const patterns = [
+        () => { const s = 2 + Math.floor(Math.random()*5); const seq = [s, s*2, s*4, s*8]; return { seq, answer: s*16 }; },
+        () => { const s = 1 + Math.floor(Math.random()*4); const seq = [s, s*3, s*9, s*27]; return { seq, answer: s*81 }; },
+        () => { const seq = [1, 4, 9, 16]; return { seq, answer: 25 }; }, // squares
+        () => { const seq = [2, 6, 12, 20]; return { seq, answer: 30 }; }, // n(n+1)
+        () => { const seq = [1, 1, 2, 3]; return { seq, answer: 5 }; }, // Fibonacci
+        () => { const seq = [2, 3, 5, 7]; return { seq, answer: 11 }; }, // primes
+      ];
+      const p = patterns[Math.floor(Math.random() * patterns.length)]();
+      return { type: "seq", seq: p.seq, answer: p.answer, choices: makeDistractors(p.answer, 6) };
+    } else if (r < 0.75) {
+      // Multi-step arithmetic: a × b - c, or (a + b) × c
+      const a = 5 + Math.floor(Math.random() * 12);
+      const b = 3 + Math.floor(Math.random() * 9);
+      const c = 2 + Math.floor(Math.random() * 8);
+      const op = Math.random() < 0.5 ? "mulSub" : "addMul";
+      const equation = op === "mulSub" ? `${a} × ${b} − ${c} = ?` : `(${a} + ${b}) × ${c} = ?`;
+      const answer = op === "mulSub" ? a * b - c : (a + b) * c;
+      return { type: "eq", equation, answer, choices: makeDistractors(answer, 9) };
     } else {
-      const a = Math.floor(Math.random() * 40) + 10, b = Math.floor(Math.random() * 20) + 5, answer = a + b;
-      const ch = new Set([answer]); while (ch.size < 4) { const o = Math.floor(Math.random() * 8) + 1; ch.add(Math.random() > 0.5 ? answer + o : Math.max(1, answer - o)); }
-      return { type: "eq", equation: `${a} + ${b} = ?`, answer, choices: [...ch].sort(() => Math.random() - 0.5) };
+      // Percent of, or "share splits"
+      const which = Math.random() < 0.5 ? "pct" : "split";
+      if (which === "pct") {
+        const base = (5 + Math.floor(Math.random() * 12)) * 10; // 50..170
+        const pct = [10, 15, 20, 25, 30, 40, 75][Math.floor(Math.random() * 7)];
+        const answer = Math.round(base * pct / 100);
+        return { type: "eq", equation: `${pct}% of ${base} = ?`, answer, choices: makeDistractors(answer, 8) };
+      } else {
+        // a is x more than b, total is t; find a
+        const b = 5 + Math.floor(Math.random() * 12);
+        const diff = 2 + Math.floor(Math.random() * 8);
+        const a = b + diff;
+        const total = a + b;
+        const equation = `Two values sum to ${total}. One is ${diff} more. Larger = ?`;
+        return { type: "eq", equation, answer: a, choices: makeDistractors(a, 5) };
+      }
     }
-  }));
+  };
+
+  const [problems] = useState(() => Array.from({ length: TOTAL }, (_, i) => buildProblem(i)));
 
   useEffect(() => {
-    setTimeLeft(10); setSelected(null); clearInterval(timerRef.current);
+    setTimeLeft(TIME_PER); setSelected(null); clearInterval(timerRef.current);
     timerRef.current = setInterval(() => setTimeLeft(t => { if (t <= 1) { clearInterval(timerRef.current); return 0; } return t - 1; }), 1000);
     return () => clearInterval(timerRef.current);
   }, [round]);
 
   const pick = (c) => {
     if (selected !== null) return; clearInterval(timerRef.current); setSelected(c);
-    const pts = c === problems[round].answer ? 10 + timeLeft * 2 : 0;
+    const correct = c === problems[round].answer;
+    const pts = correct ? 15 + timeLeft * 3 : 0;
     setScore(s => s + pts);
-    setTimeout(() => { if (round < 7) setRound(r => r + 1); else onComplete(score + pts); }, 1000);
+    setTimeout(() => { if (round < TOTAL - 1) setRound(r => r + 1); else onComplete(score + pts); }, 900);
   };
 
   const p = problems[round];
   return (
-    <GameChrome name="Number Flow" icon="🔢" color={C.gold} round={round + 1} totalRounds={8} score={score} timeLeft={timeLeft} maxTime={10} subtitle="Find the pattern or solve it">
+    <GameChrome name="Number Flow" icon="🔢" color={C.gold} round={round + 1} totalRounds={TOTAL} score={score} timeLeft={timeLeft} maxTime={TIME_PER} subtitle="Find the pattern or solve it">
       <div style={{ textAlign: "center", marginBottom: 20 }}>
         {p.type === "seq" ? (
           <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
-            {p.seq.map((n, i) => <div key={i} style={{ ...mono(24), color: "#fff", padding: "8px 12px", background: "rgba(255,255,255,0.08)", borderRadius: 10, minWidth: 44, textAlign: "center" }}>{n}</div>)}
-            <div style={{ ...displayFont(26), color: C.gold, padding: "8px 12px", background: `${C.gold}26`, borderRadius: 10, border: `2px solid ${C.gold}4d`, minWidth: 44 }}>?</div>
+            {p.seq.map((n, i) => <div key={i} style={{ ...mono(22), color: "#fff", padding: "8px 12px", background: "rgba(255,255,255,0.08)", borderRadius: 10, minWidth: 44, textAlign: "center" }}>{n}</div>)}
+            <div style={{ ...displayFont(24), color: C.gold, padding: "8px 12px", background: `${C.gold}26`, borderRadius: 10, border: `2px solid ${C.gold}4d`, minWidth: 44 }}>?</div>
           </div>
-        ) : <div style={{ ...displayFont(30), color: "#fff" }}>{p.equation}</div>}
+        ) : <div style={{ ...font(22, 600), color: "#fff", padding: "0 8px", lineHeight: 1.4 }}>{p.equation}</div>}
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, maxWidth: 300, margin: "0 auto" }}>
         {p.choices.map(c => {
@@ -1116,53 +1188,109 @@ const NumberFlowGame = ({ onComplete }) => {
 };
 
 // ───────────────────────────────────────────────────────────
-// FOCUS GRID — selective attention / visual search.
+// FOCUS GRID — selective attention via conjunctive search.
+// Adult tuning: 6×6 grid, target is a SHAPE+COLOR combination.
+// Each feature alone appears in many distractors, so feature-
+// pop-out is impossible — you must serially scan and feature-
+// integrate. Shorter timer, more targets per round.
 // ───────────────────────────────────────────────────────────
 const FocusGridGame = ({ onComplete }) => {
-  const symSets = [{ target: "★", dist: ["●","▲","■","◆"] }, { target: "♥", dist: ["♠","♣","◆","●"] }, { target: "☾", dist: ["☀","☁","★","✦"] }];
+  const SHAPES = ["●", "■", "▲", "◆", "★"];
+  const COLORS = [
+    { name: "red",   hex: "#ff6b6b" },
+    { name: "blue",  hex: "#5a9ee0" },
+    { name: "green", hex: "#5ed3a3" },
+    { name: "gold",  hex: "#f4c763" },
+    { name: "purple",hex: "#a08fc7" },
+  ];
+  const GRID_SIZE = 36; // 6x6
+  const TOTAL_ROUNDS = 5;
+  const TIMER_TENTHS = 70; // 7 seconds
+
   const [round, setRound] = useState(0);
   const [grid, setGrid] = useState([]);
-  const [target, setTarget] = useState("");
+  const [targetShape, setTargetShape] = useState("");
+  const [targetColor, setTargetColor] = useState(COLORS[0]);
   const [found, setFound] = useState(0);
-  const [total, setTotal] = useState(3);
+  const [total, setTotal] = useState(4);
   const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(80);
+  const [timeLeft, setTimeLeft] = useState(TIMER_TENTHS);
   const [roundDone, setRoundDone] = useState(false);
   const timerRef = useRef(null);
 
   const buildRound = useCallback((r) => {
-    const sym = symSets[r % symSets.length]; const numT = Math.min(3 + Math.floor(r / 2), 6);
-    setTarget(sym.target); setTotal(numT); setFound(0); setRoundDone(false); setTimeLeft(80);
-    const pos = new Set(); while (pos.size < numT) pos.add(Math.floor(Math.random() * 25));
-    setGrid(Array.from({ length: 25 }, (_, i) => ({ id: i, symbol: pos.has(i) ? sym.target : sym.dist[Math.floor(Math.random() * sym.dist.length)], isTarget: pos.has(i), tapped: false })));
+    // Pick target shape and color
+    const tShape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+    const tColor = COLORS[Math.floor(Math.random() * COLORS.length)];
+    const numT = Math.min(4 + Math.floor(r / 2), 7);
+    setTargetShape(tShape); setTargetColor(tColor);
+    setTotal(numT); setFound(0); setRoundDone(false); setTimeLeft(TIMER_TENTHS);
+
+    const positions = new Set();
+    while (positions.size < numT) positions.add(Math.floor(Math.random() * GRID_SIZE));
+
+    const cells = Array.from({ length: GRID_SIZE }, (_, i) => {
+      if (positions.has(i)) {
+        return { id: i, shape: tShape, color: tColor, isTarget: true, tapped: false };
+      }
+      // Distractor: same shape OR same color, but NOT both
+      const sameShape = Math.random() < 0.5;
+      let shape, color;
+      if (sameShape) {
+        shape = tShape;
+        do { color = COLORS[Math.floor(Math.random() * COLORS.length)]; } while (color.hex === tColor.hex);
+      } else {
+        color = tColor;
+        do { shape = SHAPES[Math.floor(Math.random() * SHAPES.length)]; } while (shape === tShape);
+      }
+      return { id: i, shape, color, isTarget: false, tapped: false };
+    });
+    setGrid(cells);
+
     clearInterval(timerRef.current);
     timerRef.current = setInterval(() => setTimeLeft(t => { if (t <= 1) { clearInterval(timerRef.current); setRoundDone(true); return 0; } return t - 1; }), 100);
   }, []);
 
   useEffect(() => { buildRound(0); return () => clearInterval(timerRef.current); }, [buildRound]);
-  useEffect(() => { if (roundDone) { clearInterval(timerRef.current); setTimeout(() => { if (round + 1 < 6) { setRound(r => r + 1); buildRound(round + 1); } else onComplete(score); }, 1200); } }, [roundDone]);
+  useEffect(() => { if (roundDone) { clearInterval(timerRef.current); setTimeout(() => { if (round + 1 < TOTAL_ROUNDS) { setRound(r => r + 1); buildRound(round + 1); } else onComplete(score); }, 1200); } }, [roundDone]);
 
   const tap = (cell) => {
     if (cell.tapped || roundDone) return;
     setGrid(g => g.map(c => c.id === cell.id ? { ...c, tapped: true } : c));
-    if (cell.isTarget) { const nf = found + 1; setFound(nf); setScore(s => s + 15 + Math.floor(timeLeft / 10)); if (nf === total) setRoundDone(true); }
-    else setScore(s => Math.max(0, s - 5));
+    if (cell.isTarget) {
+      const nf = found + 1; setFound(nf);
+      setScore(s => s + 20 + Math.floor(timeLeft / 7));
+      if (nf === total) setRoundDone(true);
+    } else {
+      setScore(s => Math.max(0, s - 8));
+    }
   };
 
   return (
-    <GameChrome name="Focus Grid" icon="🎯" color="#a08fc7" round={round + 1} totalRounds={6} score={score} timeLeft={timeLeft / 10} maxTime={8} subtitle={`Find all ${target} symbols`}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 16px", background: "rgba(255,255,255,0.06)", borderRadius: 12, marginBottom: 14 }}>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}><span style={{ ...font(14, 600), color: "rgba(255,255,255,0.6)" }}>Find:</span><span style={{ fontSize: 26, color: C.gold }}>{target}</span></div>
-        <span style={{ ...mono(16), color: "#a08fc7" }}>{found}/{total}</span>
+    <GameChrome name="Focus Grid" icon="🎯" color="#a08fc7" round={round + 1} totalRounds={TOTAL_ROUNDS} score={score} timeLeft={timeLeft / 10} maxTime={TIMER_TENTHS / 10} subtitle="Find ONLY the exact match — same shape AND color">
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 16px", background: "rgba(255,255,255,0.06)", borderRadius: 12, marginBottom: 12 }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <span style={{ ...font(13, 600), color: "rgba(255,255,255,0.6)" }}>Find:</span>
+          <span style={{ fontSize: 28, color: targetColor.hex, lineHeight: 1 }}>{targetShape}</span>
+          <span style={{ ...font(11, 600), color: targetColor.hex, textTransform: "uppercase", letterSpacing: 1 }}>{targetColor.name}</span>
+        </div>
+        <span style={{ ...mono(15), color: "#a08fc7" }}>{found}/{total}</span>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6, maxWidth: 320, margin: "0 auto" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 4, maxWidth: 360, margin: "0 auto" }}>
         {grid.map(cell => (
           <div key={cell.id} onClick={() => tap(cell)} style={{
-            aspectRatio: "1", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 10, cursor: cell.tapped || roundDone ? "default" : "pointer", fontSize: 20,
-            color: cell.tapped && cell.isTarget ? C.success : cell.tapped ? C.coral : roundDone && cell.isTarget && !cell.tapped ? C.gold : "rgba(255,255,255,0.7)",
-            background: cell.tapped && cell.isTarget ? `${C.success}33` : cell.tapped ? `${C.coral}26` : "rgba(255,255,255,0.06)", transition: "all 0.2s"
-          }}>{cell.symbol}</div>
+            aspectRatio: "1", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 8,
+            cursor: cell.tapped || roundDone ? "default" : "pointer",
+            fontSize: 18, lineHeight: 1,
+            color: cell.tapped && cell.isTarget ? "#fff" : cell.tapped && !cell.isTarget ? "rgba(255,255,255,0.3)" : cell.color.hex,
+            background: cell.tapped && cell.isTarget ? `${C.success}55` : cell.tapped ? `${C.coral}33` : roundDone && cell.isTarget && !cell.tapped ? `${C.gold}22` : "rgba(255,255,255,0.06)",
+            border: roundDone && cell.isTarget && !cell.tapped ? `2px solid ${C.gold}` : "2px solid transparent",
+            transition: "all 0.15s",
+          }}>{cell.shape}</div>
         ))}
+      </div>
+      <div style={{ ...font(11, 500), color: "rgba(255,255,255,0.35)", textAlign: "center", marginTop: 12, lineHeight: 1.5 }}>
+        Wrong taps cost 8 points. Distractors share one feature but not both.
       </div>
     </GameChrome>
   );
@@ -1180,20 +1308,21 @@ const StroopGame = ({ onComplete }) => {
     { name: "BLUE",   hex: "#5a9ee0" },
     { name: "GREEN",  hex: "#5ed3a3" },
     { name: "YELLOW", hex: "#f4c763" },
+    { name: "PURPLE", hex: "#a08fc7" },
   ];
-  const TOTAL = 18;
+  const TOTAL = 28;
   const [round, setRound] = useState(0);
   const [score, setScore] = useState(0);
   const [trials] = useState(() => Array.from({ length: TOTAL }, (_, i) => {
-    // Mix congruent and incongruent (~70% incongruent for training value)
+    // 80% incongruent, no warm-up — incongruent is what trains inhibition
     const wordIdx = Math.floor(Math.random() * COLORS.length);
     let inkIdx;
-    if (i < 3 || Math.random() < 0.3) inkIdx = wordIdx; // some congruent
+    if (Math.random() < 0.2) inkIdx = wordIdx; // 20% congruent for variety
     else { do { inkIdx = Math.floor(Math.random() * COLORS.length); } while (inkIdx === wordIdx); }
     return { wordIdx, inkIdx };
   }));
   const [reactionStart, setReactionStart] = useState(Date.now());
-  const [feedback, setFeedback] = useState(null); // 'correct' | 'wrong' | null
+  const [feedback, setFeedback] = useState(null);
   const [locked, setLocked] = useState(false);
 
   useEffect(() => { setReactionStart(Date.now()); setFeedback(null); setLocked(false); }, [round]);
@@ -1209,18 +1338,18 @@ const StroopGame = ({ onComplete }) => {
     const correct = i === trial.inkIdx;
     let pts = 0;
     if (correct) {
-      // Speed bonus (faster than 2s = full bonus); incongruent worth more
-      const speedBonus = Math.max(0, Math.round(20 - rt / 100));
-      pts = 10 + speedBonus + (isCongruent ? 0 : 8);
+      // Speed bonus: full points if under 1.2s, scaled to 0 at 2.5s
+      const speedBonus = Math.max(0, Math.round(25 - Math.max(0, rt - 1200) / 50));
+      pts = 8 + speedBonus + (isCongruent ? 0 : 12);
     } else {
-      pts = -5;
+      pts = -12;
     }
     setScore(s => Math.max(0, s + pts));
     setFeedback(correct ? "correct" : "wrong");
     setTimeout(() => {
       if (round + 1 >= TOTAL) onComplete(score + pts);
       else setRound(r => r + 1);
-    }, 600);
+    }, 450);
   };
 
   return (
@@ -1241,21 +1370,21 @@ const StroopGame = ({ onComplete }) => {
           {COLORS[trial.wordIdx].name}
         </div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6 }}>
         {COLORS.map((c, i) => (
           <div key={c.name} onClick={() => pick(i)} style={{
-            padding: "18px 12px", borderRadius: 14, textAlign: "center",
+            padding: "14px 4px", borderRadius: 12, textAlign: "center",
             cursor: locked ? "default" : "pointer",
             background: `${c.hex}22`,
             border: `2px solid ${c.hex}88`,
-            ...font(17, 700), color: "#fff",
+            ...font(11, 700), color: "#fff",
             transition: "transform 0.1s, background 0.2s",
           }}
-            onMouseDown={e => !locked && (e.currentTarget.style.transform = "scale(0.96)")}
+            onMouseDown={e => !locked && (e.currentTarget.style.transform = "scale(0.94)")}
             onMouseUp={e => (e.currentTarget.style.transform = "scale(1)")}
             onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
           >
-            <div style={{ width: 28, height: 28, borderRadius: "50%", background: c.hex, margin: "0 auto 6px" }} />
+            <div style={{ width: 24, height: 24, borderRadius: "50%", background: c.hex, margin: "0 auto 4px" }} />
             {c.name}
           </div>
         ))}
@@ -1274,58 +1403,103 @@ const StroopGame = ({ onComplete }) => {
 };
 
 // ───────────────────────────────────────────────────────────
-// WORD MAZE — verbal fluency / lexical connections.
+// WORD MAZE — verbal fluency via semantic association.
+// Adult tuning: each puzzle gives 3 anchor words that share a
+// specific connection. Pick the 4th word that BEST fits the
+// pattern. Distractors are deliberately close (often plausible-
+// but-wrong), forcing genuine semantic search and inhibition
+// of obvious-but-wrong answers.
 // ───────────────────────────────────────────────────────────
 const WordMazeGame = ({ onComplete }) => {
-  const chains = [
-    { start: "FIRE", end: "WATER", words: ["FIRE","FLAME","HEAT","STEAM","WATER"], decoys: ["SMOKE","COLD","BURN"] },
-    { start: "MIND", end: "BODY", words: ["MIND","BRAIN","HEAD","NECK","BODY"], decoys: ["THOUGHT","SPINE","SKULL"] },
-    { start: "SEED", end: "TREE", words: ["SEED","SPROUT","STEM","BRANCH","TREE"], decoys: ["ROOT","LEAF","BARK"] },
-    { start: "IDEA", end: "PROFIT", words: ["IDEA","PLAN","ACTION","RESULT","PROFIT"], decoys: ["DREAM","HOPE","LOSS"] },
-    { start: "DAWN", end: "NIGHT", words: ["DAWN","MORNING","NOON","EVENING","NIGHT"], decoys: ["SUNSET","DUSK","MIDDAY"] },
+  // Remote Associates Test style — each puzzle has 3 anchor words and you find the word that connects them all.
+  // These are real RAT items used in creativity/verbal fluency research.
+  const puzzles = [
+    { anchors: ["RING", "ALARM", "DOOR"],     answer: "BELL",   distractors: ["KNOCK", "PHONE", "CHIME"],  hint: "Something that rings" },
+    { anchors: ["STONE", "MIDDLE", "ICE"],    answer: "AGE",    distractors: ["ROCK", "TIME", "ERA"],       hint: "Each + this = a period" },
+    { anchors: ["BREAK", "LIGHT", "BIRTH"],   answer: "DAY",    distractors: ["NIGHT", "TIME", "SUN"],      hint: "day-X or X-day" },
+    { anchors: ["FINGER", "FOOT", "BLUE"],    answer: "PRINT",  distractors: ["NAIL", "STEP", "INK"],       hint: "Each + this = a noun" },
+    { anchors: ["SAND", "THUNDER", "BRAIN"],  answer: "STORM",  distractors: ["WIND", "RAIN", "WAVE"],      hint: "X-storm" },
+    { anchors: ["DARK", "TROJAN", "ROCKING"], answer: "HORSE",  distractors: ["KNIGHT", "STAR", "CHAIR"],   hint: "Dark X, Trojan X..." },
+    { anchors: ["ROUND", "COFFEE", "DINNER"], answer: "TABLE",  distractors: ["CIRCLE", "MUG", "PLATE"],    hint: "Furniture" },
+    { anchors: ["ROCK", "JAZZ", "MARCHING"],  answer: "BAND",   distractors: ["MUSIC", "PIECE", "TEAM"],    hint: "Each is a type of this" },
+    { anchors: ["BASE", "EYE", "FOOT"],       answer: "BALL",   distractors: ["GLASS", "LASH", "STEP"],     hint: "Each + this = compound" },
+    { anchors: ["RIVER", "BOAT", "ROW"],      answer: "BANK",   distractors: ["WATER", "OAR", "STREAM"],    hint: "Where the river meets land" },
+    { anchors: ["HEART", "WIND", "BREAK"],    answer: "BEAT",   distractors: ["PULSE", "GUST", "STOP"],     hint: "Heart-X, X-up, break-X" },
+    { anchors: ["FALL", "ACTOR", "DUST"],     answer: "STAR",   distractors: ["LEAF", "STAGE", "WIND"],     hint: "Each + this = a noun" },
   ];
+  const validPuzzles = puzzles;
+
+  // Hard version: choose the BEST associate. Each puzzle scrambled.
+  const PUZZLE_COUNT = 6;
+  const [puzzleList] = useState(() => [...validPuzzles].sort(() => Math.random() - 0.5).slice(0, PUZZLE_COUNT));
   const [round, setRound] = useState(0);
-  const [chain, setChain] = useState([]);
-  const [available, setAvailable] = useState([]);
   const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(15);
-  const [done, setDone] = useState(false);
+  const [selected, setSelected] = useState(null);
+  const [timeLeft, setTimeLeft] = useState(20);
   const timerRef = useRef(null);
+  const [hintRevealed, setHintRevealed] = useState(false);
 
-  const setupRound = useCallback((r) => {
-    const c = chains[r]; setChain([c.words[0]]);
-    setAvailable([...c.words.slice(1), ...c.decoys].sort(() => Math.random() - 0.5));
-    setDone(false); setTimeLeft(15); clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => setTimeLeft(t => { if (t <= 1) { clearInterval(timerRef.current); setDone(true); return 0; } return t - 1; }), 1000);
-  }, []);
+  useEffect(() => {
+    setTimeLeft(20); setSelected(null); setHintRevealed(false); clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => setTimeLeft(t => { if (t <= 1) { clearInterval(timerRef.current); return 0; } return t - 1; }), 1000);
+    return () => clearInterval(timerRef.current);
+  }, [round]);
 
-  useEffect(() => { setupRound(0); return () => clearInterval(timerRef.current); }, [setupRound]);
+  const p = puzzleList[round];
+  const choices = useMemo(() => [p.answer, ...p.distractors].sort(() => Math.random() - 0.5), [p]);
 
-  const pickWord = (w) => {
-    if (done) return;
-    const c = chains[round];
-    if (w === c.words[chain.length]) {
-      const nc = [...chain, w]; setChain(nc); setAvailable(a => a.filter(x => x !== w));
-      const pts = 15 + timeLeft * 2; setScore(s => s + pts);
-      if (nc.length === c.words.length) { clearInterval(timerRef.current); setDone(true); setTimeout(() => { if (round + 1 < 5) { setRound(r => r + 1); setupRound(round + 1); } else onComplete(score + pts); }, 1200); }
-    } else { setScore(s => Math.max(0, s - 10)); }
+  const pick = (w) => {
+    if (selected) return; clearInterval(timerRef.current); setSelected(w);
+    const correct = w === p.answer;
+    // Heavy bonus for fast correct, harsh penalty for hint+wrong
+    const pts = correct ? 25 + timeLeft * 2 - (hintRevealed ? 15 : 0) : -15;
+    setScore(s => Math.max(0, s + pts));
+    setTimeout(() => {
+      if (round + 1 >= PUZZLE_COUNT) onComplete(score + pts);
+      else setRound(r => r + 1);
+    }, 1400);
   };
 
-  const c = chains[round];
   return (
-    <GameChrome name="Word Maze" icon="🔤" color={C.coral} round={round + 1} totalRounds={5} score={score} timeLeft={timeLeft} maxTime={15} subtitle={`Build: ${c.start} → ${c.end}`}>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", padding: 12, background: "rgba(255,255,255,0.06)", borderRadius: 14, marginBottom: 14, minHeight: 60, alignItems: "center" }}>
-        {chain.map((w, i) => (
-          <div key={i} style={{ ...font(14, 700), color: C.success, padding: "8px 14px", background: `${C.success}26`, borderRadius: 10, border: `1.5px solid ${C.success}66` }}>{w}</div>
-        ))}
-        {chain.length < c.words.length && <div style={{ ...font(14, 600), color: C.gold, opacity: 0.7 }}>→ ?</div>}
+    <GameChrome name="Word Maze" icon="🔤" color={C.coral} round={round + 1} totalRounds={PUZZLE_COUNT} score={score} timeLeft={timeLeft} maxTime={20} subtitle="What word connects all three?">
+      <div style={{ padding: 18, background: "rgba(255,255,255,0.06)", borderRadius: 16, marginBottom: 18, textAlign: "center" }}>
+        <div style={{ display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" }}>
+          {p.anchors.map((w, i) => (
+            <div key={i} style={{ ...font(16, 700), color: "#fff", padding: "10px 16px", background: `${C.coral}26`, borderRadius: 12, border: `1.5px solid ${C.coral}55`, letterSpacing: 1 }}>{w}</div>
+          ))}
+        </div>
+        <div style={{ ...font(14, 600), color: "rgba(255,255,255,0.5)", marginTop: 12 }}>↓ what connects them?</div>
       </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>
-        {available.map(w => (
-          <div key={w} onClick={() => pickWord(w)} style={{ ...font(14, 600), color: "#fff", padding: "10px 18px", background: "rgba(255,255,255,0.1)", borderRadius: 12, cursor: "pointer", border: "1.5px solid rgba(255,255,255,0.15)", transition: "all 0.2s" }}>{w}</div>
-        ))}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        {choices.map(w => {
+          const isA = selected && w === p.answer, isW = selected === w && w !== p.answer;
+          return (
+            <div key={w} onClick={() => pick(w)} style={{
+              ...font(15, 700), textAlign: "center", padding: "16px 8px", borderRadius: 12,
+              cursor: selected ? "default" : "pointer", letterSpacing: 1,
+              color: isA ? C.deepNavy : "#fff",
+              background: isA ? C.success : isW ? `${C.coral}55` : "rgba(255,255,255,0.08)",
+              border: `2px solid ${isA ? C.success : isW ? C.coral : "transparent"}`,
+              transition: "all 0.25s",
+            }}>{w}</div>
+          );
+        })}
       </div>
-      {done && <div style={{ textAlign: "center", marginTop: 16, ...font(16, 600), color: C.success }}>Chain complete!</div>}
+      {!hintRevealed && !selected && timeLeft < 12 && (
+        <div onClick={() => setHintRevealed(true)} style={{ ...font(12, 600), color: C.gold, textAlign: "center", marginTop: 14, cursor: "pointer", padding: 8, opacity: 0.7 }}>
+          💡 Reveal hint (-15 pts)
+        </div>
+      )}
+      {hintRevealed && (
+        <div style={{ ...font(13, 600), color: C.gold, textAlign: "center", marginTop: 14, padding: "8px 12px", background: `${C.gold}1a`, borderRadius: 10 }}>
+          {p.hint}
+        </div>
+      )}
+      {selected && (
+        <div style={{ ...font(13, 600), color: selected === p.answer ? C.success : C.coral, textAlign: "center", marginTop: 14 }}>
+          {selected === p.answer ? "✓ Connected!" : `✗ The answer was ${p.answer}`}
+        </div>
+      )}
     </GameChrome>
   );
 };
@@ -1355,22 +1529,24 @@ const ReefCrossingGame = ({ onComplete }) => {
         { id: "fish",  label: "Fish",  component: Clownfish,  scale: 0.65 },
         { id: "kelp",  label: "Kelp",  emoji: "🌿" },
       ],
-      // Predator -> prey constraints
       eats: [["shark", "fish"], ["fish", "kelp"]],
+      capacity: 1,
       optimal: 7,
-      hint: "Classic puzzle — only the fish can't be left alone with either neighbor.",
+      hint: "Classic — only the fish can't be left alone with either neighbor. Shuttle holds 1.",
     },
     {
-      name: "The Drift",
+      name: "The Reef",
       creatures: [
-        { id: "orca",     label: "Orca",     component: OrcaWhale, scale: 0.5 },
-        { id: "seal",     label: "Seal",     component: SeaTurtle, scale: 0.55 }, // proxy visual
-        { id: "squid",    label: "Squid",    component: GiantSquid, scale: 0.5 },
-        { id: "fish",     label: "Fish",     component: Clownfish, scale: 0.6 },
+        { id: "shark", label: "Shark", component: Hammerhead, scale: 0.5 },
+        { id: "fish",  label: "Fish",  component: Clownfish, scale: 0.55 },
+        { id: "crab",  label: "Crab",  component: Crab,      scale: 0.55 },
+        { id: "kelp",  label: "Kelp",  emoji: "🌿" },
       ],
-      eats: [["orca", "seal"], ["seal", "squid"], ["squid", "fish"]],
-      optimal: 9,
-      hint: "A longer chain — three predator-prey pairs.",
+      // Two independent threats: shark/fish and crab/kelp
+      eats: [["shark", "fish"], ["crab", "kelp"]],
+      capacity: 2,
+      optimal: 3,
+      hint: "Two independent threats. Shuttle holds 2 — split each predator from its prey.",
     },
   ];
 
@@ -1419,10 +1595,10 @@ const ReefCrossingGame = ({ onComplete }) => {
   const tapCreatureOnBank = (id, side) => {
     if (phase !== "playing") return;
     if (side !== shuttleSide) return; // shuttle isn't here
-    if (shuttle.length >= 1) return;   // shuttle full
+    if (shuttle.length >= puzzle.capacity) return; // shuttle full
     if (side === "left") setLeftBank(b => b.filter(x => x !== id));
     else setRightBank(b => b.filter(x => x !== id));
-    setShuttle([id]);
+    setShuttle(s => [...s, id]);
   };
 
   // Player taps the passenger in the shuttle — unload to current bank
@@ -1551,11 +1727,11 @@ const ReefCrossingGame = ({ onComplete }) => {
                   <div key={id} onClick={() => tapCreatureOnBank(id, "left")} style={{
                     display: "flex", alignItems: "center", gap: 6,
                     padding: "4px 8px", background: "rgba(255,255,255,0.08)",
-                    borderRadius: 8, cursor: shuttleSide === "left" && shuttle.length === 0 && phase === "playing" ? "pointer" : "default",
-                    opacity: shuttleSide === "left" && shuttle.length === 0 && phase === "playing" ? 1 : 0.7,
+                    borderRadius: 8, cursor: shuttleSide === "left" && shuttle.length < puzzle.capacity && phase === "playing" ? "pointer" : "default",
+                    opacity: shuttleSide === "left" && shuttle.length < puzzle.capacity && phase === "playing" ? 1 : 0.7,
                     transition: "transform 0.15s, opacity 0.2s",
                   }}
-                    onMouseDown={e => shuttleSide === "left" && shuttle.length === 0 && phase === "playing" && (e.currentTarget.style.transform = "scale(0.95)")}
+                    onMouseDown={e => shuttleSide === "left" && shuttle.length < puzzle.capacity && phase === "playing" && (e.currentTarget.style.transform = "scale(0.95)")}
                     onMouseUp={e => (e.currentTarget.style.transform = "scale(1)")}
                     onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
                   >
@@ -1585,13 +1761,17 @@ const ReefCrossingGame = ({ onComplete }) => {
             }}>
               <div style={{ ...font(11, 700), color: "#fff", marginBottom: 2 }}>🤿 You</div>
               {shuttle.length > 0 ? (
-                <div onClick={() => unloadShuttle(shuttle[0])} style={{
-                  display: "flex", flexDirection: "column", alignItems: "center",
-                  cursor: phase === "playing" ? "pointer" : "default",
-                  padding: 4, background: "rgba(255,255,255,0.15)", borderRadius: 8,
-                }}>
-                  {renderCreatureIcon(shuttle[0], 36)}
-                  <span style={{ ...font(10, 600), color: "#fff" }}>{getCreature(shuttle[0]).label}</span>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4, width: "100%" }}>
+                  {shuttle.map(id => (
+                    <div key={id} onClick={() => unloadShuttle(id)} style={{
+                      display: "flex", flexDirection: "column", alignItems: "center",
+                      cursor: phase === "playing" ? "pointer" : "default",
+                      padding: 2, background: "rgba(255,255,255,0.15)", borderRadius: 6,
+                    }}>
+                      {renderCreatureIcon(id, 28)}
+                      <span style={{ ...font(9, 600), color: "#fff" }}>{getCreature(id).label}</span>
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <div style={{ ...font(10), color: "rgba(255,255,255,0.5)", fontStyle: "italic", padding: "8px 0" }}>empty</div>
@@ -1619,11 +1799,11 @@ const ReefCrossingGame = ({ onComplete }) => {
                   <div key={id} onClick={() => tapCreatureOnBank(id, "right")} style={{
                     display: "flex", alignItems: "center", gap: 6,
                     padding: "4px 8px", background: "rgba(255,255,255,0.08)",
-                    borderRadius: 8, cursor: shuttleSide === "right" && shuttle.length === 0 && phase === "playing" ? "pointer" : "default",
-                    opacity: shuttleSide === "right" && shuttle.length === 0 && phase === "playing" ? 1 : 0.7,
+                    borderRadius: 8, cursor: shuttleSide === "right" && shuttle.length < puzzle.capacity && phase === "playing" ? "pointer" : "default",
+                    opacity: shuttleSide === "right" && shuttle.length < puzzle.capacity && phase === "playing" ? 1 : 0.7,
                     transition: "transform 0.15s, opacity 0.2s",
                   }}
-                    onMouseDown={e => shuttleSide === "right" && shuttle.length === 0 && phase === "playing" && (e.currentTarget.style.transform = "scale(0.95)")}
+                    onMouseDown={e => shuttleSide === "right" && shuttle.length < puzzle.capacity && phase === "playing" && (e.currentTarget.style.transform = "scale(0.95)")}
                     onMouseUp={e => (e.currentTarget.style.transform = "scale(1)")}
                     onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
                   >
@@ -1651,7 +1831,7 @@ const ReefCrossingGame = ({ onComplete }) => {
             onMouseUp={e => (e.currentTarget.style.transform = "scale(1)")}
             onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
           >
-            {shuttleSide === "left" ? "Cross → " : "← Cross"} {shuttle.length > 0 ? `(with ${getCreature(shuttle[0]).label})` : "(alone)"}
+            {shuttleSide === "left" ? "Cross →" : "← Cross"} {shuttle.length > 0 ? `(${shuttle.length})` : "(alone)"}
           </div>
         </div>
       </div>
@@ -1681,11 +1861,15 @@ const ReefCrossingGame = ({ onComplete }) => {
 
 // ───────────────────────────────────────────────────────────
 // DUAL N-BACK — working memory updating (Jaeggi 2008).
+// Adult tuning: starts at n=2, escalates to n=3 in the second
+// half. Faster stimulus presentation (1100ms). Wrong responses
+// cost points — false alarms are the real difficulty signature.
 // ───────────────────────────────────────────────────────────
 const DualNBackGame = ({ onComplete }) => {
   const colors = [C.aqua, C.coral, C.gold, "#a08fc7", C.seagrass, C.shallow];
-  const nBack = 2;
-  const totalTrials = 20;
+  const totalTrials = 28;
+  const SHIFT_AT = 14; // switch from n=2 to n=3 at this trial
+
   const [trial, setTrial] = useState(0);
   const [currentPos, setCurrentPos] = useState(-1);
   const [currentColor, setCurrentColor] = useState(0);
@@ -1697,19 +1881,23 @@ const DualNBackGame = ({ onComplete }) => {
   const [responded, setResponded] = useState(false);
   const seqRef = useRef([]);
 
+  const getNBack = (t) => t < SHIFT_AT ? 2 : 3;
+
   const showTrial = useCallback((t, seq) => {
     if (t >= totalTrials) { onComplete(score); return; }
     setTrial(t); setCurrentPos(seq[t].pos); setCurrentColor(seq[t].col);
     setPhase("show"); setPosMatch(false); setColorMatch(false); setResponded(false); setFeedback(null);
-    setTimeout(() => setPhase("respond"), 1500);
+    setTimeout(() => setPhase("respond"), 1100);
   }, [score, onComplete]);
 
   useEffect(() => {
     const seq = [];
     for (let i = 0; i < totalTrials; i++) {
+      const nb = getNBack(i);
       let pos = Math.floor(Math.random() * 9), col = Math.floor(Math.random() * colors.length);
-      if (i >= nBack && Math.random() < 0.3) pos = seq[i - nBack].pos;
-      if (i >= nBack && Math.random() < 0.3) col = seq[i - nBack].col;
+      // ~33% chance of n-back match per dimension
+      if (i >= nb && Math.random() < 0.33) pos = seq[i - nb].pos;
+      if (i >= nb && Math.random() < 0.33) col = seq[i - nb].col;
       seq.push({ pos, col });
     }
     seqRef.current = seq; showTrial(0, seq);
@@ -1719,21 +1907,27 @@ const DualNBackGame = ({ onComplete }) => {
   const submit = useCallback(() => {
     if (responded) return;
     setResponded(true);
-    const seq = seqRef.current; const t = trial;
-    const aPM = t >= nBack && seq[t].pos === seq[t - nBack].pos;
-    const aCM = t >= nBack && seq[t].col === seq[t - nBack].col;
+    const seq = seqRef.current; const t = trial; const nb = getNBack(t);
+    const aPM = t >= nb && seq[t].pos === seq[t - nb].pos;
+    const aCM = t >= nb && seq[t].col === seq[t - nb].col;
     const pC = posMatch === aPM, cC = colorMatch === aCM;
-    const pts = (pC ? 10 : 0) + (cC ? 10 : 0);
-    setScore(s => s + pts); setFeedback({ posCorrect: pC, colCorrect: cC, pts });
-    setTimeout(() => showTrial(t + 1, seq), 1200);
+    // +10 for correct, -8 for false alarm or miss — penalizes guessing
+    const posPts = pC ? 10 : -8;
+    const colPts = cC ? 10 : -8;
+    const pts = posPts + colPts;
+    setScore(s => Math.max(0, s + pts));
+    setFeedback({ posCorrect: pC, colCorrect: cC, pts });
+    setTimeout(() => showTrial(t + 1, seq), 900);
   }, [responded, trial, posMatch, colorMatch, showTrial]);
 
   useEffect(() => {
-    if (phase === "respond" && !responded) { const t = setTimeout(() => submit(), 3000); return () => clearTimeout(t); }
+    if (phase === "respond" && !responded) { const t = setTimeout(() => submit(), 2300); return () => clearTimeout(t); }
   }, [phase, responded, submit]);
 
+  const currentNB = getNBack(trial);
+
   return (
-    <GameChrome name="Dual N-Back" icon="🔁" color={C.shallow} round={trial + 1} totalRounds={totalTrials} score={score} timeLeft={0} maxTime={0} subtitle={`Match position OR color from ${nBack} steps ago`}>
+    <GameChrome name="Dual N-Back" icon="🔁" color={C.shallow} round={trial + 1} totalRounds={totalTrials} score={score} timeLeft={0} maxTime={0} subtitle={`Match position OR color from ${currentNB} steps ago${trial === SHIFT_AT ? " — N just increased!" : ""}`}>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, width: "min(100%, 240px)", margin: "0 auto 16px" }}>
         {Array.from({ length: 9 }, (_, i) => (
           <div key={i} style={{ aspectRatio: "1", borderRadius: 12, background: i === currentPos && phase === "show" ? colors[currentColor] : "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", transition: "all 0.3s", boxShadow: i === currentPos && phase === "show" ? `0 0 20px ${colors[currentColor]}66` : "none" }} />
@@ -1748,10 +1942,10 @@ const DualNBackGame = ({ onComplete }) => {
         <div style={{ textAlign: "center", marginTop: 8, display: "flex", gap: 12, justifyContent: "center" }}>
           <span style={{ ...font(14, 600), color: feedback.posCorrect ? C.success : C.coral }}>Pos: {feedback.posCorrect ? "✓" : "✗"}</span>
           <span style={{ ...font(14, 600), color: feedback.colCorrect ? C.success : C.coral }}>Color: {feedback.colCorrect ? "✓" : "✗"}</span>
-          <span style={{ ...mono(14), color: C.gold }}>+{feedback.pts}</span>
+          <span style={{ ...mono(14), color: feedback.pts >= 0 ? C.gold : C.coral }}>{feedback.pts >= 0 ? "+" : ""}{feedback.pts}</span>
         </div>
       )}
-      <div style={{ ...font(12, 500), color: "rgba(255,255,255,0.3)", textAlign: "center", marginTop: 12 }}>Toggle matches, then confirm</div>
+      <div style={{ ...font(12, 500), color: "rgba(255,255,255,0.3)", textAlign: "center", marginTop: 12 }}>Toggle matches, then confirm. Wrong = -8.</div>
     </GameChrome>
   );
 };
@@ -1772,28 +1966,30 @@ const RuleShiftGame = ({ onComplete }) => {
     { name: "gold", hex: "#f4c763" },
   ];
   const SHAPES = ["circle", "triangle", "square", "star"];
-  const RULES = ["color", "shape", "count"];
-  const TOTAL = 20;
+  // 4 sorting dimensions — added "size" for more discrimination demand
+  const RULES = ["color", "shape", "count", "size"];
+  const TOTAL = 26;
 
   const buildCard = () => ({
     color: Math.floor(Math.random() * 4),
     shape: Math.floor(Math.random() * 4),
     count: Math.floor(Math.random() * 4) + 1,
+    size: Math.floor(Math.random() * 4), // 0=tiny, 1=small, 2=medium, 3=large
   });
 
-  // Generate "category" reference cards covering all dimensions
+  // Reference cards — each holds a distinct value on every dimension
   const refCards = useMemo(() => [
-    { color: 0, shape: 0, count: 1 }, // red, circle, 1
-    { color: 1, shape: 1, count: 2 }, // blue, triangle, 2
-    { color: 2, shape: 2, count: 3 }, // green, square, 3
-    { color: 3, shape: 3, count: 4 }, // gold, star, 4
+    { color: 0, shape: 0, count: 1, size: 0 },
+    { color: 1, shape: 1, count: 2, size: 1 },
+    { color: 2, shape: 2, count: 3, size: 2 },
+    { color: 3, shape: 3, count: 4, size: 3 },
   ], []);
 
   const [trial, setTrial] = useState(0);
   const [score, setScore] = useState(0);
   const [card, setCard] = useState(buildCard);
-  const [currentRule, setCurrentRule] = useState(() => RULES[Math.floor(Math.random() * 3)]);
-  const [streak, setStreak] = useState(0); // consecutive correct under current rule
+  const [currentRule, setCurrentRule] = useState(() => RULES[Math.floor(Math.random() * RULES.length)]);
+  const [streak, setStreak] = useState(0);
   const [feedback, setFeedback] = useState(null);
   const [locked, setLocked] = useState(false);
   const [ruleChanged, setRuleChanged] = useState(false);
@@ -1801,7 +1997,8 @@ const RuleShiftGame = ({ onComplete }) => {
   const correctRefIdx = (c, rule) => {
     if (rule === "color") return c.color;
     if (rule === "shape") return c.shape;
-    return c.count - 1;
+    if (rule === "count") return c.count - 1;
+    return c.size; // size
   };
 
   const tap = (idx) => {
@@ -1809,22 +2006,22 @@ const RuleShiftGame = ({ onComplete }) => {
     setLocked(true);
     const correctIdx = correctRefIdx(card, currentRule);
     const correct = idx === correctIdx;
-    let pts = correct ? 12 : -4;
-    if (correct && ruleChanged) { pts += 8; setRuleChanged(false); } // bonus for catching the shift
+    let pts = correct ? 15 : -10; // harsher wrong penalty
+    if (correct && ruleChanged) { pts += 12; setRuleChanged(false); } // bigger catch-the-shift bonus
     setScore(s => Math.max(0, s + pts));
     setFeedback(correct ? "correct" : "wrong");
     const newStreak = correct ? streak + 1 : 0;
     setStreak(newStreak);
     setTimeout(() => {
-      // After 4-6 in a row, silently shift the rule
-      if (newStreak >= 4 + Math.floor(Math.random() * 3)) {
+      // After only 2-4 in a row, silently shift the rule (more frequent shifts)
+      if (newStreak >= 2 + Math.floor(Math.random() * 3)) {
         const others = RULES.filter(r => r !== currentRule);
         setCurrentRule(others[Math.floor(Math.random() * others.length)]);
         setStreak(0); setRuleChanged(true);
       }
       if (trial + 1 >= TOTAL) { onComplete(score + pts); return; }
       setTrial(t => t + 1); setCard(buildCard()); setFeedback(null); setLocked(false);
-    }, 700);
+    }, 600);
   };
 
   // SVG shape renderer
@@ -1844,8 +2041,12 @@ const RuleShiftGame = ({ onComplete }) => {
     return <polygon points={pts.join(" ")} fill={c} />;
   };
 
+  // Size scale: 0 → 50%, 1 → 70%, 2 → 90%, 3 → 110%
+  const sizeScale = (sizeIdx) => 0.5 + sizeIdx * 0.2;
+
   const renderCard = (c, big = false) => {
-    const sz = big ? 36 : 22;
+    const baseSz = big ? 36 : 22;
+    const sz = Math.round(baseSz * sizeScale(c.size));
     const shapes = Array.from({ length: c.count });
     return (
       <div style={{
